@@ -233,7 +233,7 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
     </div>
     <div class="row" style="margin-top:8px">
       <div><label>분쇄도</label><input type="text" id="mSetting" data-sg="setting" autocomplete="off" placeholder="예: 12"></div>
-      <div><label>원두</label><input type="text" id="mBeans" data-sg="beans" autocomplete="off" placeholder="예: 케냐"></div>
+      <div><label>원두</label><select id="mBeans"></select></div>
     </div>
     <div style="margin-top:8px"><label>메모</label><input type="text" id="mNote" placeholder="선택"></div>
     <div class="btns" style="margin-top:12px">
@@ -1151,6 +1151,23 @@ function bindGrinderSelect(sel, extra, onPick) {
     onPick && onPick(v);
   };
 }
+/* 원두: 레시피북에 등록한 원두 목록(localStorage 'pourGuide.v1'의 beans)에서 고르기. 저장은 이름(beans)과 beanId */
+function pourBeans() { try { const o = JSON.parse(localStorage.getItem('pourGuide.v1') || '{}'); return Array.isArray(o.beans) ? o.beans : []; } catch (e) { return []; } }
+function beanName(b) { return b.name || ''; }
+function beanOptions(cur) {
+  const e = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const bs = pourBeans().slice().sort((a, b) => (a.left <= 0) - (b.left <= 0) || (b.created || 0) - (a.created || 0));
+  const known = bs.some(b => beanName(b) === cur);
+  return `<option value=""${cur ? '' : ' selected'}>원두 고르지 않기</option>` + (cur && !known ? `<option selected>${e(cur)}</option>` : '') +
+    bs.map(b => `<option value="${e(beanName(b))}" data-id="${e(b.id)}"${beanName(b) === cur ? ' selected' : ''}>${e(beanName(b))}${b.left <= 0 ? ' (다 마심)' : ''}</option>`).join('') +
+    '<option value="+">+ 목록에 없어요 (직접 입력)</option>';
+}
+function bindBeanSelect(sel) {
+  let last = sel.value;
+  sel.onchange = () => { if (sel.value !== '+') { last = sel.value; return; }
+    const v = (prompt('원두 이름 (레시피북 원두 탭에서 등록하면 목록에 떠요)', '') || '').trim();
+    if (!v) { sel.value = last; return; } sel.innerHTML = beanOptions(v); last = v; };
+}
 function recGrinders() { return Array.from(new Set(S.records.slice().sort((a, b) => b.ts - a.ts).map(r => (r.grinder || '').trim()).filter(Boolean))).concat(pourBrews().map(h => h.grinder).filter(Boolean)); }
 function setGrinderSel(sel, v) { sel.innerHTML = grinderOptions(v || '', recGrinders()); }
 /* 레시피북(Pour Guide) 추출 기록 읽기: 같은 주소의 localStorage 'pourGuide.v1'. 통합 3단계 */
@@ -1632,6 +1649,7 @@ function attachSuggest(inp, key, getGrinder) {
 }
 for (const inp of $$('input[data-sg]')) attachSuggest(inp, inp.dataset.sg, () => $('#mGrinder').value.trim());
 setGrinderSel($('#mGrinder'), ''); bindGrinderSelect($('#mGrinder'), recGrinders);
+$('#mBeans').innerHTML = beanOptions(''); bindBeanSelect($('#mBeans'));
 addEventListener('scroll', e => { if (suggBox && !suggBox.contains(e.target)) suggPlace(); }, true);
 addEventListener('resize', () => suggPlace && suggPlace());
 document.addEventListener('pointerdown', e => { if (suggBox && !suggBox.contains(e.target) && e.target !== suggOwner) hideSuggest(); }, true);
@@ -1677,7 +1695,7 @@ function askModal({ title, message, fields = [], ok = '확인', danger = false }
   return new Promise(res => {
     const m = $('#modal'), box = $('#modalBox');
     box.innerHTML = `<h2>${esc(title)}</h2>` + (message ? `<p>${esc(message)}</p>` : '') +
-      fields.map((f, i) => `<label for="mf${i}">${esc(f.label)}</label>` + (f.sg === 'grinder' ? `<select id="mf${i}">${grinderOptions(f.value || '', recGrinders())}</select>` : `<input type="text" id="mf${i}" value="${esc(f.value || '')}">`)).join('') +
+      fields.map((f, i) => `<label for="mf${i}">${esc(f.label)}</label>` + (f.sg === 'grinder' ? `<select id="mf${i}">${grinderOptions(f.value || '', recGrinders())}</select>` : f.sg === 'beans' ? `<select id="mf${i}">${beanOptions(f.value || '')}</select>` : `<input type="text" id="mf${i}" value="${esc(f.value || '')}">`)).join('') +
       `<div class="btns" style="margin-top:12px"><button class="btn ${danger ? 'danger' : 'primary'}" id="mOk">${esc(ok)}</button><button class="btn" id="mCancel">취소</button></div>`;
     m.classList.remove('hidden');
     const close = v => { hideSuggest(); m.classList.add('hidden'); res(v); };
@@ -1685,7 +1703,7 @@ function askModal({ title, message, fields = [], ok = '확인', danger = false }
     $('#mCancel').onclick = () => close(null);
     m.onclick = e => { if (e.target === m) close(null); };
     const gi = fields.findIndex(x => x.sg === 'grinder');
-    fields.forEach((f, i) => { if (f.sg === 'grinder') bindGrinderSelect($('#mf' + i), recGrinders); else if (f.sg) attachSuggest($('#mf' + i), f.sg, () => gi >= 0 ? $('#mf' + gi).value.trim() : ''); });
+    fields.forEach((f, i) => { if (f.sg === 'grinder') bindGrinderSelect($('#mf' + i), recGrinders); else if (f.sg === 'beans') bindBeanSelect($('#mf' + i)); else if (f.sg) attachSuggest($('#mf' + i), f.sg, () => gi >= 0 ? $('#mf' + gi).value.trim() : ''); });
     if (fields.length) $('#mf0').focus();
   });
 }
@@ -1849,7 +1867,7 @@ function prefillMeta() {
     const m = JSON.parse(localStorage.getItem('gs_meta') || '{}');
     if (!$('#mGrinder').value) setGrinderSel($('#mGrinder'), m.grinder || '');
     if (!$('#mBurr').value) $('#mBurr').value = m.burr || '';
-    if (!$('#mBeans').value) $('#mBeans').value = m.beans || '';
+    if (!$('#mBeans').value) { $('#mBeans').innerHTML = beanOptions(m.beans || ''); }
   } catch (e) { }
 }
 function makeThumb() {
@@ -1867,7 +1885,7 @@ async function saveRecord() {
   const rec = {
     id: uid(), ts: Date.now(),
     grinder: $('#mGrinder').value.trim(), burr: $('#mBurr').value.trim(), setting: $('#mSetting').value.trim(),
-    beans: $('#mBeans').value.trim(), note: $('#mNote').value.trim(),
+    beans: $('#mBeans').value.trim(), beanId: ($('#mBeans').selectedOptions[0] && $('#mBeans').selectedOptions[0].dataset.id) || '', note: $('#mNote').value.trim(),
     coasterMm: +$('#coasterMm').value || 104, umPerPx: +(S.geo.mmPerPx * 1000).toFixed(2),
     T: +$('#rT').value / 100, split: +$('#rS').value / 100,
     nTotal: S.res.particles.length, nExcl: S.res.particles.length - S.lastD.length,
