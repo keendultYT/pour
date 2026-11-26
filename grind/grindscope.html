@@ -2499,7 +2499,8 @@ async function printSheet() {
   catch (e) { toast('PDF를 만들지 못했어요: ' + (e && e.message || e)); return; }
   finally { spin(false); b.disabled = false; }
   const name = 'pour-grind-sheet-A4.pdf', file = new File([blob], name, { type: 'application/pdf' });
-  const canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+  let blocked = false; try { blocked = !!localStorage.getItem('gs_pdf_noshare'); } catch (e) { }
+  const canShare = !blocked && !!(navigator.canShare && navigator.canShare({ files: [file] }));   // 한 번 막힌 폰은 다음부터 저장만
   const m = $('#modal'), box = $('#modalBox');
   box.innerHTML = `<h2>인쇄 시트 PDF</h2><p>인쇄할 때 배율을 꼭 <b>실제 크기(100%)</b>, 용지는 <b>A4</b>로 골라 주세요. ‘페이지에 맞춤’으로 인쇄하면 크기가 줄어요. 인쇄한 뒤 눈금을 자로 재서 100mm인지 확인하면 좋아요.</p>
     <div class="btns" style="margin-top:12px;flex-direction:column">${canShare ? '<button class="btn primary" id="pdfShare">📤 공유 · 프린터 앱으로 보내기</button>' : ''}<button class="btn${canShare ? '' : ' primary'}" id="pdfSave">📥 PDF 파일로 저장</button><button class="btn" id="pdfClose">닫기</button></div>`;
@@ -2509,10 +2510,10 @@ async function printSheet() {
   const save = msg => {
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
-    toast(msg || '다운로드 폴더에 저장했어요 · 파일 앱에서 열어 인쇄해 주세요'); close();
+    toast(msg || '다운로드 폴더에 저장했어요 · 내 파일 → 다운로드에서 열어 인쇄해 주세요'); close();
   };
   // 제목 없이 파일만 공유 (제목이 있으면 거절하는 브라우저가 있음). 거절되면 바로 파일로 저장하고 이유를 보여 줌
-  if ($('#pdfShare')) $('#pdfShare').onclick = () => { navigator.share({ files: [file] }).then(close).catch(err => { if (err && err.name === 'AbortError') return; save(`공유가 막혀서 파일로 저장했어요 (${err && err.name || '알 수 없음'}) · 파일 앱에서 열어 인쇄해 주세요`); }); };
+  if ($('#pdfShare')) $('#pdfShare').onclick = () => { navigator.share({ files: [file] }).then(close).catch(err => { if (err && err.name === 'AbortError') return; if (err && err.name === 'NotAllowedError') { try { localStorage.setItem('gs_pdf_noshare', '1'); } catch (e) { } } save(`공유가 막혀서 파일로 저장했어요 (${err && err.name || '알 수 없음'}) · 파일 앱에서 열어 인쇄해 주세요`); }); };
   $('#pdfSave').onclick = () => save();
 }
 
