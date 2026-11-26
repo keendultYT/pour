@@ -1,15 +1,40 @@
 {
-  "name": "Pour Guide",
-  "short_name": "Pour Guide",
+  "name": "Pour",
+  "short_name": "Pour",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
-  "display_override": ["fullscreen", "standalone"],
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
   "orientation": "portrait",
   "background_color": "#0b0d10",
   "theme_color": "#0b0d10",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "id": "./",
+  "description": "푸어 안내와 커피 가루 입자 분석",
+  "shortcuts": [
+    {
+      "name": "푸어 가이드",
+      "url": "./"
+    },
+    {
+      "name": "입자 분석",
+      "url": "./grind/grindscope.html"
+    }
   ]
 }

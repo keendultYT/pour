@@ -4,31 +4,37 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>GrindScope 입자 분석</title>
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#8a4b1f">
-<link rel="icon" type="image/png" href="icon-192.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0d10" media="(prefers-color-scheme: dark)">
+<script>if(/SamsungBrowser/.test(navigator.userAgent))document.documentElement.classList.add("ssd")</script>
+<link rel="icon" type="image/png" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="GrindScope">
+<meta name="apple-mobile-web-app-title" content="Pour">
 <style>
 :root{
-  --bg:#f6f3ee; --panel:#ffffff; --ink:#26221d; --mute:#7a7268; --line:#e5dfd6;
-  --accent:#8a4b1f; --accent-ink:#ffffff; --good:#1f8f5f; --warn:#c77700; --bad:#c0392b;
-  --grid:#e9e3da; --chartbg:#ffffff;
+  /* Pour 공통 색 (통합 2단계): 폰 설정이 밝으면 밝게, 어두우면 Pour Guide와 같은 어두운 색 */
+  --bg:#f4f5f7; --panel:#ffffff; --ink:#101418; --mute:#5d6875; --line:#dde1e7;
+  --accent:#0f766e; --accent-ink:#ffffff; --good:#047857; --warn:#b45309; --bad:#dc2626;
+  --grid:#e6e9ee; --chartbg:#ffffff;
   --radius:14px;
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){ --bg:#16130f; --panel:#201c17; --ink:#efe9df; --mute:#a0978a; --line:#352f27;
-    --accent:#d98b4f; --accent-ink:#1a1209; --grid:#2e2922; --chartbg:#201c17; color-scheme:dark; }
+  :root:not([data-theme="light"]){ --bg:#0b0d10; --panel:#14181d; --ink:#eef1f5; --mute:#a3adbb; --line:#222831;
+    --accent:#2dd4bf; --accent-ink:#062520; --good:#34d399; --warn:#fbbf24; --bad:#f87171; --grid:#1d232b; --chartbg:#14181d; color-scheme:dark; }
+  /* 삼성 인터넷 '어둡게 보기'가 회색 글씨를 어둡게 덧칠하는 문제: 흰색+투명도로 (Pour Guide와 같은 대책) */
+  html.ssd:not([data-theme="light"]){ --ink:#fff; --mute:rgba(255,255,255,.64); }
 }
-:root[data-theme="dark"]{ --bg:#16130f; --panel:#201c17; --ink:#efe9df; --mute:#a0978a; --line:#352f27;
-  --accent:#d98b4f; --accent-ink:#1a1209; --grid:#2e2922; --chartbg:#201c17; color-scheme:dark; }
+:root[data-theme="dark"]{ --bg:#0b0d10; --panel:#14181d; --ink:#eef1f5; --mute:#a3adbb; --line:#222831;
+  --accent:#2dd4bf; --accent-ink:#062520; --good:#34d399; --warn:#fbbf24; --bad:#f87171; --grid:#1d232b; --chartbg:#14181d; color-scheme:dark; }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Pretendard","Noto Sans KR","Apple SD Gothic Neo",system-ui,sans-serif;-webkit-text-size-adjust:100%}
 body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
 header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:baseline;gap:10px}
+header .toPour{align-self:center;flex:none;color:var(--accent);text-decoration:none;font-size:13px;font-weight:600;border:1px solid var(--line);border-radius:999px;padding:4px 10px;margin-right:2px}
 header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:-.01em}
 header > span{color:var(--mute);font-size:12px}
 header .install{margin-left:auto;align-self:center;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:5px 12px;font:inherit;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer}
@@ -122,7 +128,7 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
 </style>
 </head>
 <body>
-<header><h1>GrindScope</h1><span>코스터 위 가루 사진 → 입자 크기·분포</span><nav class="tabs"><button data-tab="analyze" aria-selected="true">분석</button><button data-tab="records" aria-selected="false">기록 <span id="recCount"></span></button><button data-tab="compare" aria-selected="false">비교</button></nav><button class="install hidden" id="btnInstall" type="button">＋ 앱 설치</button></header>
+<header><a class="toPour" href="../" aria-label="푸어 가이드로">‹ 푸어</a><h1>GrindScope</h1><span>코스터 위 가루 사진 → 입자 크기·분포</span><nav class="tabs"><button data-tab="analyze" aria-selected="true">분석</button><button data-tab="records" aria-selected="false">기록 <span id="recCount"></span></button><button data-tab="compare" aria-selected="false">비교</button></nav><button class="install hidden" id="btnInstall" type="button">＋ 앱 설치</button></header>
 <div class="status" id="status">⏳ 앱 준비 중…</div>
 <main>
 
@@ -1572,7 +1578,7 @@ if (window.visualViewport) visualViewport.addEventListener('resize', () => suggP
   const btn = $('#btnInstall');
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const web = location.protocol === 'https:' || location.hostname === 'localhost';
-  if ('serviceWorker' in navigator && web) navigator.serviceWorker.register('sw.js').catch(() => { });
+  if ('serviceWorker' in navigator && web) navigator.serviceWorker.register('../sw.js', { scope: '../' }).catch(() => { });
   if (standalone || !web) return;          // 이미 앱으로 열었거나, 받은 파일로 열면 설치 불가
   let deferred = null;
   btn.classList.remove('hidden');
@@ -1649,7 +1655,7 @@ function exportChartPng(cfg, title, name, how) {
   const cv = document.createElement('canvas');
   drawChart(cv, cfg, {
     w: 1600, h: 900, dpr: 1, font: 20, lw: 3, title,
-    theme: { bg: '#ffffff', ink: '#26221d', mute: '#7a7268', grid: '#e9e3da' },
+    theme: { bg: '#ffffff', ink: '#101418', mute: '#5d6875', grid: '#e6e9ee' },
   });
   cv.toBlob(b => downloadBlob(b, name, how), 'image/png');
 }
@@ -2106,7 +2112,7 @@ $('#btnSave').onclick = saveRecord;
 function exportResultCard(how) {
   const st = S.lastStats;
   const FONT = '-apple-system,"Pretendard","Noto Sans KR",system-ui,sans-serif';
-  const C = { bg: '#ffffff', card: '#f6f3ee', ink: '#26221d', mute: '#7a7268', accent: '#8a4b1f', line: '#e5dfd6' };
+  const C = { bg: '#ffffff', card: '#f4f5f7', ink: '#101418', mute: '#5d6875', accent: '#0f766e', line: '#dde1e7' };
   const W = 1080, P = 48, GAP = 20, CH = 150, CW = (W - 2 * P - GAP) / 2;
   const chartH = 640;
   const items = resultItems(st), rows = Math.ceil(items.length / 2);
@@ -2157,7 +2163,7 @@ function exportResultCard(how) {
   const ch = document.createElement('canvas');
   drawChart(ch, singleCfg(), {
     w: W - 2 * P, h: chartH, dpr: 1, font: 22, lw: 3,
-    theme: { bg: C.bg, ink: C.ink, mute: C.mute, grid: '#e9e3da' },
+    theme: { bg: C.bg, ink: C.ink, mute: C.mute, grid: '#e6e9ee' },
   });
   g.drawImage(ch, P, yChart);
   g.strokeStyle = C.line; g.lineWidth = 2; g.beginPath(); g.moveTo(P, H - 60); g.lineTo(W - P, H - 60); g.stroke();
@@ -2181,7 +2187,7 @@ function pngCmp(how) {
   const cfg = cmpCfg(ser);
   const rows = cfg.focus ? [cfg.focus] : ser;
   const FONT = '-apple-system,"Pretendard","Noto Sans KR",system-ui,sans-serif';
-  const C = { bg: '#ffffff', ink: '#26221d', mute: '#7a7268', line: '#e5dfd6', head: '#f6f3ee' };
+  const C = { bg: '#ffffff', ink: '#101418', mute: '#5d6875', line: '#dde1e7', head: '#f4f5f7' };
   const W = 1600, P = 40, chartH = 820, RH = 56, HH = 52;
   const fu = finesUm(), BL = { vol: '부피', area: '면적', num: '개수' }[S.cmpMode];
   const title = cfg.focus ? (metaLabel(cfg.focus.rec) || '입자 분포') : '그라인더 입자 분포 비교';
@@ -2199,7 +2205,7 @@ function pngCmp(how) {
   g.fillStyle = C.mute; g.font = `24px ${FONT}`; g.textAlign = 'right';
   g.fillText(`${BL} 기준 · µm · ${fmtDate(Date.now())}`, W - P, P + 12); g.textAlign = 'left';
   const ch = document.createElement('canvas');
-  drawChart(ch, cfg, { w: W - 2 * P, h: chartH, dpr: 1, font: 22, lw: 3, theme: { bg: C.bg, ink: C.ink, mute: C.mute, grid: '#e9e3da' } });
+  drawChart(ch, cfg, { w: W - 2 * P, h: chartH, dpr: 1, font: 22, lw: 3, theme: { bg: C.bg, ink: C.ink, mute: C.mute, grid: '#e6e9ee' } });
   g.drawImage(ch, P, yChart);
   // 표
   g.fillStyle = C.head; g.fillRect(P, yTab, W - 2 * P, HH);

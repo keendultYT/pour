@@ -1,19 +1,3 @@
-// GrindScope 서비스워커: 인터넷이 되면 항상 최신 파일, 안 되면 저장해 둔 파일로 열기
-const CACHE = 'grindscope-v1';
-const FILES = ['./grindscope.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
-});
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
-});
-self.addEventListener('fetch', e => {
-  const req = e.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
-  e.respondWith(
-    fetch(req).then(res => {
-      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
-      return res;
-    }).catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('./grindscope.html')))
-  );
-});
+// 예전 입자 분석 전용 서비스워커를 치우는 파일. 이제 한 단계 위의 ../sw.js 하나가 두 화면을 맡아요
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', e => { e.waitUntil(self.registration.unregister()); });
