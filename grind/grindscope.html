@@ -40,6 +40,10 @@ body{padding-bottom:calc(24px + env(safe-area-inset-bottom))}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
 header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:baseline;gap:10px}
 #recList .pbw{color:var(--accent)}
+/* 측정 방법 선택 (2.17) */
+.srcmode{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.srcmode .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.srcmode .btn{padding:7px 12px;font-size:13px}
 /* Pour 책갈피 탭 (레시피북 ↔ 입자 분석). 앱 설치 버튼은 Pour 앱 안이라 숨김 */
 header:has(.booktabs){align-items:flex-end;padding-top:16px;padding-bottom:0}
 header .booktabs{display:flex;align-items:flex-end;gap:4px;margin-bottom:-1px}
@@ -153,11 +157,12 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
 <section id="tab-analyze">
   <div class="panel">
     <h2>1. 사진</h2>
+    <div class="srcmode"><div class="seg" id="srcMode" role="group" aria-label="측정 방법"><button type="button" data-src="coaster">코스터</button><button type="button" data-src="sheet">인쇄 시트</button></div><button type="button" class="btn" id="btnSheet" hidden>🖨 시트 인쇄 · PDF</button></div>
     <div class="btns">
       <label class="btn primary filebtn">📷 촬영<input id="fileCamera" type="file" accept="image/*" capture="environment"></label>
       <label class="btn filebtn">🖼 사진 선택<input id="filePick" type="file" accept="image/*"></label>
     </div>
-    <div class="hint" style="margin-top:8px">코스터 원 전체가 나오게, 위에서 수직으로, 그림자 없이. 원본 해상도 그대로 올려주세요(메신저로 보내면 압축돼요).</div>
+    <div class="hint" id="srcHint" style="margin-top:8px">코스터 원 전체가 나오게, 위에서 수직으로, 그림자 없이. 원본 해상도 그대로 올려주세요(메신저로 보내면 압축돼요).</div>
     <div class="drop" id="drop" style="margin-top:10px">여기에 사진을 끌어다 놓아도 돼요</div>
   </div>
 
@@ -1232,6 +1237,8 @@ async function loadFile(file) {
     fctx.imageSmoothingQuality = 'high';
     fctx.drawImage(bmp, 0, 0, W, H);
     if (bmp.close) bmp.close();            // 원본 비트맵 메모리 바로 해제
+    S.sheet = null;
+    if (srcMode() === 'sheet') { spin(true, '시트 표식 찾는 중…'); await tick(); await loadSheet(full, W, H, file, down); return; }
 
     // 저해상도에서 코스터 찾기
     const s = Math.min(1, 640 / Math.max(W, H));
@@ -1298,6 +1305,7 @@ function adjValues() {
 
 async function computeGeometry() {
   if (!S.B) return;
+  if (S.sheet) { showGeoWarn(S.sheet.warn); return; }   // 인쇄 시트는 불러올 때 이미 펴고 잼
   spin(true, '코스터 인식 중…'); await tick();
   const mm = Math.max(20, +$('#coasterMm').value || 104);
   const geo = Core.geometry(S.B, S.rw, S.rh, S.c0, mm, adjValues(), { edge: S.edgeCache });
@@ -1887,6 +1895,7 @@ async function saveRecord() {
     grinder: $('#mGrinder').value.trim(), burr: $('#mBurr').value.trim(), setting: $('#mSetting').value.trim(),
     beans: $('#mBeans').value.trim(), beanId: ($('#mBeans').selectedOptions[0] && $('#mBeans').selectedOptions[0].dataset.id) || '', note: $('#mNote').value.trim(),
     coasterMm: +$('#coasterMm').value || 104, umPerPx: +(S.geo.mmPerPx * 1000).toFixed(2),
+    method: S.sheet ? 'sheet' : 'coaster', ...(S.sheet ? { printScale: +S.sheet.scale.toFixed(4), scaleBy: S.sheet.how } : {}),
     T: +$('#rT').value / 100, split: +$('#rS').value / 100,
     nTotal: S.res.particles.length, nExcl: S.res.particles.length - S.lastD.length,
     d: Array.from(S.lastD, v => +v.toFixed(1)),
@@ -2368,6 +2377,274 @@ for (const b of $$('#segCmpMode button')) b.onclick = () => { S.cmpMode = b.data
 for (const b of $$('#segCmpKind button')) b.onclick = () => { S.cmpKind = b.dataset.k; $$('#segCmpKind button').forEach(x => x.setAttribute('aria-pressed', x === b)); renderCompare(); };
 
 /* ---------- 탭 ---------- */
+
+/* =========================================================
+   인쇄 시트 (코스터 없이 측정, 2.17)
+   - A4 시트: 네 귀퉁이 검은 표식(왼쪽 위만 속이 빈 사각형 → 방향), 가운데 100mm 흰 분석 칸, 100mm 눈금, 카드·동전 자리
+   - 사진에서 표식 4개를 찾아 원근을 펴고(호모그래피) 분석 칸만 반듯한 이미지로 만든 뒤 기존 분석을 그대로 씀
+   - 카드(85.60×53.98mm)·동전(500원 26.5mm, 100원 24.0mm)으로 인쇄 배율을 재서 보정. 1% 넘게 다르면 다시 인쇄 안내
+   - 분석 화면·저장 섬네일에는 가운데 분석 칸만 들어가서 카드 번호가 남지 않음
+   ========================================================= */
+const SHEET = {
+  ver: 'PG-SHEET v1',
+  marks: [[45, 25], [165, 25], [165, 145], [45, 145]],   // 표식 가운데 (페이지 mm), TL·TR·BR·BL. TL만 속이 빈 사각형
+  markMm: 12, holeMm: 6,
+  area: { x: 55, y: 35, s: 100 },                         // 분석 칸 (흰 종이 그대로)
+  rIn: 46,                                                // 분석 원 반지름 (칸 안쪽 여유 4mm)
+  card: { x: 30, y: 165, w: 85.6, h: 53.98 },
+  coins: [{ cx: 150, cy: 180, d: 26.5, name: '500원' }, { cx: 150, cy: 212, d: 24.0, name: '100원' }],
+};
+function sheetSvg() {
+  const A = SHEET.area, C = SHEET.card, m = SHEET.markMm, h = m / 2;
+  let t = '';
+  SHEET.marks.forEach(([x, y], i) => {
+    t += `<rect x="${x - h}" y="${y - h}" width="${m}" height="${m}" fill="#000"/>`;
+    if (i === 0) t += `<rect x="${x - SHEET.holeMm / 2}" y="${y - SHEET.holeMm / 2}" width="${SHEET.holeMm}" height="${SHEET.holeMm}" fill="#fff"/>`;
+  });
+  t += `<rect x="${A.x}" y="${A.y}" width="${A.s}" height="${A.s}" fill="none" stroke="#c8c8c8" stroke-width=".3"/>`;
+  t += `<text x="105" y="142" font-size="3" text-anchor="middle" fill="#555">가루를 이 네모 안에 얇게, 서로 겹치지 않게 펼쳐 주세요</text>`;
+  // 가로 눈금 100mm
+  for (let i = 0; i <= 100; i++) { const L = i % 10 ? (i % 5 ? 1.2 : 2) : 3; t += `<line x1="${A.x + i}" y1="147" x2="${A.x + i}" y2="${147 + L}" stroke="#000" stroke-width=".15"/>`; if (!(i % 10)) t += `<text x="${A.x + i}" y="${153.5}" font-size="2.2" text-anchor="middle">${i}</text>`; }
+  t += `<line x1="${A.x}" y1="147" x2="${A.x + 100}" y2="147" stroke="#000" stroke-width=".2"/><text x="${A.x + 100 + 2}" y="149.5" font-size="2.4">100mm</text>`;
+  // 세로 눈금 100mm
+  for (let i = 0; i <= 100; i++) { const L = i % 10 ? (i % 5 ? 1.2 : 2) : 3; t += `<line x1="33" y1="${A.y + i}" x2="${33 - L}" y2="${A.y + i}" stroke="#000" stroke-width=".15"/>`; if (!(i % 10)) t += `<text x="${28.5}" y="${A.y + i + .8}" font-size="2.2" text-anchor="end">${i}</text>`; }
+  t += `<line x1="33" y1="${A.y}" x2="33" y2="${A.y + 100}" stroke="#000" stroke-width=".2"/>`;
+  // 카드 자리: 모서리 표시만 (카드 가장자리 아래에는 선 없음)
+  const o = 1.5, L = 5;
+  [[C.x, C.y, 1, 1], [C.x + C.w, C.y, -1, 1], [C.x + C.w, C.y + C.h, -1, -1], [C.x, C.y + C.h, 1, -1]].forEach(([x, y, sx, sy]) => {
+    const X = x - sx * o, Y = y - sy * o;
+    t += `<path d="M${X + sx * L} ${Y} L${X} ${Y} L${X} ${Y + sy * L}" fill="none" stroke="#000" stroke-width=".3"/>`;
+  });
+  t += `<text x="${C.x}" y="${C.y - 3.5}" font-size="2.6" fill="#333">카드 자리 · 교통카드·멤버십 카드를 <tspan font-weight="700">번호 없는 뒷면</tspan>이 위로 (신용카드는 올리지 마세요)</text>`;
+  SHEET.coins.forEach(c => {
+    t += `<circle cx="${c.cx}" cy="${c.cy}" r="${c.d / 2 + 2.5}" fill="none" stroke="#d4d4d4" stroke-width=".25" stroke-dasharray="1 1"/>`;
+    t += `<text x="${c.cx + c.d / 2 + 6}" y="${c.cy + 1}" font-size="2.8" fill="#333">${c.name}</text>`;
+  });
+  t += `<text x="${C.x}" y="${C.y + C.h + 6}" font-size="2.4" fill="#555">카드나 동전 중 하나만 있어도 돼요. 인쇄 크기를 확인하는 데 써요. 번호는 저장되지 않아요.</text>`;
+  const lines = ['1. 프린터 설정에서 ‘실제 크기(100%)’로 인쇄하세요. ‘페이지에 맞춤’은 크기가 줄어요.',
+    '2. 위 눈금을 자로 재서 100mm가 아니면 다시 인쇄하세요.',
+    '3. 가운데 네모 안에 가루를 얇게 펼치고, 카드나 동전을 자리에 올려요.',
+    '4. 네 귀퉁이 검은 표식이 모두 나오게, 위에서 그림자 없이 찍어요. 무광 종이가 좋아요.'];
+  lines.forEach((s, i) => { t += `<text x="30" y="${240 + i * 6}" font-size="3" fill="#222">${s}</text>`; });
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="297mm" viewBox="0 0 210 297" font-family="sans-serif">
+<rect width="210" height="297" fill="#fff"/>
+<text x="105" y="11" font-size="4.6" font-weight="700" text-anchor="middle">Pour 입자 분석 시트</text>
+<text x="105" y="16" font-size="2.8" text-anchor="middle" fill="#444">${SHEET.ver} · 반드시 실제 크기(100%)로 인쇄</text>${t}
+<text x="105" y="290" font-size="2.2" text-anchor="middle" fill="#888">keendultyt.github.io/pour · ${SHEET.ver}</text></svg>`;
+}
+function printSheet() {
+  const w = window.open('', '_blank');
+  if (!w) { toast('새 창이 막혔어요. 팝업을 허용해 주세요'); return; }
+  w.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pour 입자 분석 시트</title>
+<style>@page{size:A4;margin:0}html,body{margin:0;background:#fff;color:#111;font-family:sans-serif}svg{display:block;width:210mm;height:297mm}
+.bar{position:sticky;top:0;background:#111;color:#fff;padding:12px 16px;font-size:14px;line-height:1.5}.bar b{color:#5eead4}.bar button{margin-top:8px;height:40px;padding:0 16px;border:0;border-radius:10px;background:#2dd4bf;color:#062520;font-weight:700;font-size:15px}
+@media print{.bar{display:none}}@media screen{svg{width:100%;height:auto;max-width:210mm}}</style></head><body>
+<div class="bar">인쇄 설정에서 <b>배율: 실제 크기(100%)</b>, 용지: <b>A4</b>로 골라 주세요. PDF로 저장해 두고 나중에 인쇄해도 돼요.<br><button onclick="print()">인쇄 · PDF 저장</button></div>
+${sheetSvg()}</body></html>`);
+  w.document.close();
+}
+
+/* 4점 호모그래피: 페이지 mm (x,y) → 사진 픽셀 (u,v) */
+function homography(src, dst) {
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = src[i], [u, v] = dst[i];
+    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+  }
+  for (let c = 0; c < 8; c++) {           // 가우스 소거
+    let p = c; for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    [A[c], A[p]] = [A[p], A[c]]; [b[c], b[p]] = [b[p], b[c]];
+    for (let r = 0; r < 8; r++) { if (r === c) continue; const f = A[r][c] / A[c][c]; for (let k = c; k < 8; k++) A[r][k] -= f * A[c][k]; b[r] -= f * b[c]; }
+  }
+  const h = b.map((v, i) => v / A[i][i]);
+  return (x, y) => { const w = h[6] * x + h[7] * y + 1; return [(h[0] * x + h[1] * y + h[2]) / w, (h[3] * x + h[4] * y + h[5]) / w]; };
+}
+/* 표식 4개 찾기 (작게 줄인 회색 이미지에서) */
+function findSheetMarks(G, w, h) {
+  const hist = new Uint32Array(256); for (let i = 0; i < G.length; i++) hist[G[i]]++;
+  let acc = 0, p90 = 255; for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= G.length * 0.9) { p90 = v; break; } }
+  const thr = Math.max(40, p90 * 0.45);
+  const lab = new Int32Array(w * h).fill(-1), comps = [], q = new Int32Array(w * h);
+  for (let s = 0; s < w * h; s++) {
+    if (G[s] >= thr || lab[s] >= 0) continue;
+    let qh = 0, qt = 0; q[qt++] = s; lab[s] = comps.length;
+    let n = 0, sx = 0, sy = 0, x0 = w, y0 = h, x1 = 0, y1 = 0;
+    while (qh < qt) {
+      const i = q[qh++], x = i % w, y = (i / w) | 0; n++; sx += x; sy += y;
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+      for (const j of [i - 1, i + 1, i - w, i + w]) {
+        if (j < 0 || j >= w * h || lab[j] >= 0 || G[j] >= thr) continue;
+        if ((j === i - 1 && x === 0) || (j === i + 1 && x === w - 1)) continue;
+        lab[j] = comps.length; q[qt++] = j;
+      }
+    }
+    comps.push({ n, cx: sx / n, cy: sy / n, bw: x1 - x0 + 1, bh: y1 - y0 + 1 });
+  }
+  const cand = comps.filter(c => c.bw >= 8 && c.bh >= 8 && c.bw / c.bh > 0.4 && c.bw / c.bh < 2.5 && c.n / (c.bw * c.bh) > 0.5 && c.n < w * h * 0.04)
+    .map(c => ({ ...c, fill: c.n / (c.bw * c.bh) })).sort((a, b) => b.n - a.n).slice(0, 10);
+  let best = null;
+  const k = cand.length;
+  for (let a = 0; a < k; a++) for (let b = a + 1; b < k; b++) for (let c = b + 1; c < k; c++) for (let d = c + 1; d < k; d++) {
+    const set = [cand[a], cand[b], cand[c], cand[d]];
+    const ns = set.map(s => s.n); if (Math.max(...ns) / Math.min(...ns) > 3) continue;
+    const mx = set.reduce((s, p) => s + p.cx, 0) / 4, my = set.reduce((s, p) => s + p.cy, 0) / 4;
+    const o = set.slice().sort((p, r) => Math.atan2(p.cy - my, p.cx - mx) - Math.atan2(r.cy - my, r.cx - mx));
+    let area = 0, convex = true;
+    for (let i = 0; i < 4; i++) {
+      const p = o[i], r = o[(i + 1) % 4], s = o[(i + 2) % 4];
+      area += p.cx * r.cy - r.cx * p.cy;
+      if ((r.cx - p.cx) * (s.cy - r.cy) - (r.cy - p.cy) * (s.cx - r.cx) <= 0) convex = false;
+    }
+    area /= 2;
+    // 표식 크기(12mm)와 표식 사이 거리(120mm)의 비율이 맞는지
+    const side = Math.sqrt(Math.abs(area)), msz = Math.sqrt(Math.max(...ns));
+    if (!convex || side / msz < 4 || side / msz > 20) continue;
+    if (!best || area > best.area) best = { area, o };
+  }
+  if (!best) return null;
+  let o = best.o, ri = 0;
+  o.forEach((p, i) => { if (p.fill < o[ri].fill) ri = i; });                 // 속이 빈 표식 = 왼쪽 위
+  const others = o.filter((_, i) => i !== ri).map(p => p.fill);
+  if (o[ri].fill > Math.min(...others) - 0.08) return { pts: o, oriented: false };   // 방향 표식이 분명하지 않음
+  return { pts: o.slice(ri).concat(o.slice(0, ri)), oriented: true };
+}
+
+/* 시트 사진 불러오기: 표식 → 원근 펴기 → 분석 칸 이미지 */
+async function loadSheet(full, W, H, file, down) {
+  const fctx = full.getContext('2d', { willReadFrequently: true });
+  const s = Math.min(1, 1600 / Math.max(W, H)), lw = Math.max(32, Math.round(W * s)), lh = Math.max(32, Math.round(H * s));
+  const lc = document.createElement('canvas'); lc.width = lw; lc.height = lh;
+  const lctx = lc.getContext('2d', { willReadFrequently: true }); lctx.drawImage(full, 0, 0, lw, lh);
+  const ld = lctx.getImageData(0, 0, lw, lh).data, G = new Uint8Array(lw * lh);
+  for (let i = 0; i < G.length; i++) G[i] = (ld[4 * i] * 0.3 + ld[4 * i + 1] * 0.59 + ld[4 * i + 2] * 0.11) | 0;
+  const mk = findSheetMarks(G, lw, lh);
+  if (!mk) {
+    spin(false); setStatus('⚠ 시트의 네 귀퉁이 표식을 찾지 못했어요', 'err');
+    showGeoWarn(['검은 표식 네 개가 모두 사진에 들어오게, 위에서 그림자 없이 다시 찍어 주세요. 시트를 바꿨다면 ‘코스터 / 인쇄 시트’에서 인쇄 시트가 골라져 있는지도 확인해 주세요.']);
+    toast('시트 표식을 찾지 못했어요'); return;
+  }
+  const img = mk.pts.map(p => [p.cx / s, p.cy / s]);
+  const Hm = homography(SHEET.marks, img);
+  const pxPerMm = Math.hypot(img[1][0] - img[0][0], img[1][1] - img[0][1]) / 120;
+  const warn = [];
+  if (!mk.oriented) warn.push('방향 표식(속이 빈 사각형)을 또렷하게 못 찾았어요. 카드·동전 자리를 못 쓸 수 있어요.');
+  // 분석 칸 (가장자리 2mm 여유 포함)을 반듯한 이미지로
+  const k = Math.min(22, Math.max(4, pxPerMm)), M0 = SHEET.area.x - 2, N0 = SHEET.area.y - 2, span = SHEET.area.s + 4, N = Math.round(span * k);
+  const corners = [[M0, N0], [M0 + span, N0], [M0 + span, N0 + span], [M0, N0 + span]].map(([x, y]) => Hm(x, y));
+  const bx0 = Math.max(0, Math.floor(Math.min(...corners.map(c => c[0]))) - 2), by0 = Math.max(0, Math.floor(Math.min(...corners.map(c => c[1]))) - 2);
+  const bx1 = Math.min(W, Math.ceil(Math.max(...corners.map(c => c[0]))) + 2), by1 = Math.min(H, Math.ceil(Math.max(...corners.map(c => c[1]))) + 2);
+  if (bx1 - bx0 < 20 || by1 - by0 < 20) { spin(false); setStatus('⚠ 분석 칸이 사진 밖에 있어요', 'err'); return; }
+  const src = fctx.getImageData(bx0, by0, bx1 - bx0, by1 - by0), sd = src.data, sw = src.width, sh = src.height;
+  const rc = document.createElement('canvas'); rc.width = N; rc.height = N;
+  const rctx = rc.getContext('2d', { willReadFrequently: true }), out = rctx.createImageData(N, N), od = out.data;
+  const B = new Uint8Array(N * N);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    let [u, v] = Hm(M0 + (i + 0.5) / k, N0 + (j + 0.5) / k); u -= bx0 + 0.5; v -= by0 + 0.5;
+    const x0 = Math.max(0, Math.min(sw - 2, Math.floor(u))), y0 = Math.max(0, Math.min(sh - 2, Math.floor(v))), fx = Math.min(1, Math.max(0, u - x0)), fy = Math.min(1, Math.max(0, v - y0));
+    const o = 4 * (j * N + i), a = 4 * (y0 * sw + x0), bq = a + 4, c = a + 4 * sw, d = c + 4;
+    for (let ch = 0; ch < 3; ch++) od[o + ch] = (sd[a + ch] * (1 - fx) + sd[bq + ch] * fx) * (1 - fy) + (sd[c + ch] * (1 - fx) + sd[d + ch] * fx) * fy;
+    od[o + 3] = 255; B[j * N + i] = od[o + 2];
+  }
+  rctx.putImageData(out, 0, 0);
+  // 인쇄 배율 (카드 · 동전)
+  const sc = mk.oriented ? sheetScale(fctx, W, H, Hm) : { s: null, how: [] };
+  let scale = 1;
+  if (sc.s && sc.s > 0.85 && sc.s < 1.15) {
+    scale = sc.s; const pct = (sc.s - 1) * 100;
+    if (Math.abs(pct) > 1) warn.push(`인쇄 크기가 실제보다 ${Math.abs(pct).toFixed(1)}% ${pct < 0 ? '작게' : '크게'} 나왔어요 (${sc.how.join('·')} 기준). 이번 결과는 보정했지만, ‘실제 크기(100%)’로 다시 인쇄하면 더 정확해요.`);
+  } else warn.push('카드나 동전이 안 보여서 인쇄 크기를 확인하지 못했어요. 100%로 인쇄했다고 보고 계산했어요.');
+  const um = 1000 * scale / k;
+  if (um > 110) warn.push(`해상도가 낮아요 (1픽셀 ≈ ${um.toFixed(0)}µm). 시트를 화면에 꽉 차게, 원본 해상도로 찍어 주세요.`);
+  else if (um > 60) warn.push(`1픽셀 ≈ ${um.toFixed(0)}µm 라서 약 ${(um * 2.5).toFixed(0)}µm 아래 입자는 측정이 어려워요.`);
+  if (down) warn.push('사진이 너무 커서 줄여서 분석했어요.');
+  const c = N / 2;
+  Object.assign(S, {
+    full: rc, W: N, H: N, rx0: 0, ry0: 0, rw: N, rh: N, B, c0: { cx: c, cy: c, r: 50 * k },
+    edgeCache: null, overrides: [], res: null, bg: null, fileName: file.name || '', downscaled: down, circularity: 1,
+    sheet: { k, scale, how: sc.how, ests: sc.ests, warn },
+  });
+  S.geo = { edge: { ok: true }, ring: { ok: true }, usedRing: false, mmPerPx: scale / k, coaster: { cx: c, cy: c, r: 50 * k }, analysis: { cx: c, cy: c, r: SHEET.rIn * k } };
+  S.bg = Core.buildBackground(S.B, N, N, S.geo.analysis);
+  S.ov = document.createElement('canvas'); S.ov.width = N; S.ov.height = N;
+  S.ovCtx = S.ov.getContext('2d'); S.ovData = S.ovCtx.createImageData(N, N);
+  resizeView(); fitView();
+  $('#panelResult').classList.remove('hidden'); $('#panelSave').classList.remove('hidden');
+  prefillMeta(); showGeoWarn(warn);
+  await computeAnalysis();
+  spin(false);
+  setStatus(`✓ 분석 완료: ${S.lastStats && S.lastStats.n || 0}개 입자 (인쇄 시트${sc.how.length ? ' · ' + sc.how.join('·') + ' 확인' : ''})`, 'ok');
+  $('#panelWork').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+/* 페이지 mm 영역을 res px/mm로 펴서 밝기·채도 읽기 */
+function sheetPatch(fctx, W, H, Hm, x0, y0, wmm, hmm, res) {
+  const cs = [[x0, y0], [x0 + wmm, y0], [x0 + wmm, y0 + hmm], [x0, y0 + hmm]].map(([x, y]) => Hm(x, y));
+  const bx0 = Math.max(0, Math.floor(Math.min(...cs.map(c => c[0]))) - 1), by0 = Math.max(0, Math.floor(Math.min(...cs.map(c => c[1]))) - 1);
+  const bx1 = Math.min(W, Math.ceil(Math.max(...cs.map(c => c[0]))) + 1), by1 = Math.min(H, Math.ceil(Math.max(...cs.map(c => c[1]))) + 1);
+  if (bx1 - bx0 < 4 || by1 - by0 < 4 || cs.some(c => c[0] < 0 || c[1] < 0 || c[0] > W || c[1] > H)) return null;   // 사진 밖
+  const d = fctx.getImageData(bx0, by0, bx1 - bx0, by1 - by0), sw = d.width, sd = d.data;
+  const w = Math.round(wmm * res), h = Math.round(hmm * res), L = new Float32Array(w * h), Sa = new Float32Array(w * h);
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const [u, v] = Hm(x0 + (i + 0.5) / res, y0 + (j + 0.5) / res), xi = Math.min(sw - 1, Math.max(0, Math.round(u - bx0))), yi = Math.min(d.height - 1, Math.max(0, Math.round(v - by0)));
+    const o = 4 * (yi * sw + xi), r = sd[o], g = sd[o + 1], b = sd[o + 2], mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    L[j * w + i] = 0.3 * r + 0.59 * g + 0.11 * b; Sa[j * w + i] = mx ? (mx - mn) / mx : 0;
+  }
+  return { w, h, L, Sa };
+}
+function sheetScale(fctx, W, H, Hm) {
+  const ests = [], how = [];
+  // 카드: 종이와 다른 칸이 이어지는 가로·세로 길이
+  const C = SHEET.card, R = 4, cp = sheetPatch(fctx, W, H, Hm, C.x - 4, C.y - 3, C.w + 8, C.h + 6, R);
+  if (cp) {
+    const Ls = Array.from(cp.L).sort((a, b) => a - b), paper = Ls[Math.floor(Ls.length * 0.9)];
+    const m0 = i => Math.abs(cp.L[i] - paper) > 28 || cp.Sa[i] > 0.2;
+    const inner = []; for (let i = 0; i < cp.L.length; i++) if (m0(i)) inner.push(cp.L[i]); inner.sort((a, b) => a - b);
+    const core = inner.length ? inner[inner.length >> 1] : paper, half = Math.abs(core - paper) / 2;   // 가장자리 = 종이와 카드의 중간 밝기
+    const m = half > 14 ? (i => Math.abs(cp.L[i] - paper) > half) : m0;
+    const col = new Float32Array(cp.w), row = new Float32Array(cp.h);
+    for (let j = 0; j < cp.h; j++) for (let i = 0; i < cp.w; i++) if (m(j * cp.w + i)) { col[i]++; row[j]++; }
+    const run = (arr, n, f) => { let best = 0, cur = 0; for (let i = 0; i < arr.length; i++) { if (arr[i] / n > f) { cur++; best = Math.max(best, cur); } else cur = 0; } return best; };
+    const wmm = run(col, cp.h, 0.45) / R, hmm = run(row, cp.w, 0.45) / R;
+    if (wmm > 80 && wmm < 92 && hmm > 50 && hmm < 58) { ests.push((C.w / wmm + C.h / hmm) / 2); how.push('카드'); }
+  }
+  // 동전: 가운데에서 이어진 어두운·색 있는 덩어리의 가로·세로
+  for (const c of SHEET.coins) {
+    const R2 = 10, pad = c.d / 2 + 5, p = sheetPatch(fctx, W, H, Hm, c.cx - pad, c.cy - pad, 2 * pad, 2 * pad, R2);
+    if (!p) continue;
+    const Ls = Array.from(p.L).sort((a, b) => a - b), paper = Ls[Math.floor(Ls.length * 0.9)];
+    const m = new Uint8Array(p.w * p.h); for (let i = 0; i < m.length; i++) m[i] = (paper - p.L[i] > 35 || p.Sa[i] > 0.22) ? 1 : 0;
+    let seed = -1; const cx = p.w >> 1, cy = p.h >> 1;
+    for (let r = 0; r < 3 * R2 && seed < 0; r++) for (let dy = -r; dy <= r && seed < 0; dy++) for (let dx = -r; dx <= r; dx++) { const i = (cy + dy) * p.w + cx + dx; if (m[i]) { seed = i; break; } }
+    if (seed < 0) continue;
+    {   // 1차로 이어진 덩어리의 밝기 → 종이와의 중간 밝기로 다시 나누기
+      const st0 = [seed], seen = new Uint8Array(m.length), vals = []; seen[seed] = 1;
+      while (st0.length) { const i = st0.pop(), x = i % p.w; vals.push(p.L[i]); for (const j of [i - 1, i + 1, i - p.w, i + p.w]) if (j >= 0 && j < m.length && m[j] && !seen[j] && Math.abs((j % p.w) - x) <= 1) { seen[j] = 1; st0.push(j); } }
+      vals.sort((a, b) => a - b); const core = vals[vals.length >> 1], half = (paper - core) / 2;
+      if (half > 15) for (let i = 0; i < m.length; i++) m[i] = (paper - p.L[i] > half) ? 1 : 0;
+      if (!m[seed]) continue;
+    }
+    const st = [seed]; m[seed] = 2; let x0 = p.w, x1 = 0, y0 = p.h, y1 = 0;
+    while (st.length) { const i = st.pop(), x = i % p.w, y = (i / p.w) | 0; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+      for (const j of [i - 1, i + 1, i - p.w, i + p.w]) if (j >= 0 && j < m.length && m[j] === 1 && Math.abs((j % p.w) - x) <= 1) { m[j] = 2; st.push(j); } }
+    const dmm = ((x1 - x0 + 1) + (y1 - y0 + 1)) / 2 / R2;
+    if (Math.abs(dmm / c.d - 1) < 0.12 && Math.abs((x1 - x0) - (y1 - y0)) < 0.12 * (x1 - x0)) { ests.push(c.d / dmm); how.push(c.name); }
+  }
+  return { s: ests.length ? ests.reduce((a, b) => a + b, 0) / ests.length : null, how, ests };
+}
+
+/* 측정 방법: 코스터 / 인쇄 시트 (기억) */
+function srcMode() { try { return localStorage.getItem('gs_src') === 'sheet' ? 'sheet' : 'coaster'; } catch (e) { return 'coaster'; } }
+function setSrcMode(m) {
+  try { localStorage.setItem('gs_src', m); } catch (e) { }
+  for (const b of $$('#srcMode button')) b.setAttribute('aria-pressed', b.dataset.src === m);
+  $('#btnSheet').hidden = m !== 'sheet';
+  $('#srcHint').textContent = m === 'sheet'
+    ? '인쇄 시트의 네 귀퉁이 검은 표식이 모두 나오게, 위에서 그림자 없이 찍어 주세요. 카드나 동전을 자리에 올리면 인쇄 크기도 확인해요.'
+    : '코스터 원 전체가 나오게, 위에서 수직으로, 그림자 없이. 원본 해상도 그대로 올려주세요(메신저로 보내면 압축돼요).';
+}
+for (const b of $$('#srcMode button')) b.onclick = () => setSrcMode(b.dataset.src);
+$('#btnSheet').onclick = printSheet;
+setSrcMode(srcMode());
 function switchTab(name) {
   for (const b of $$('nav.tabs button')) b.setAttribute('aria-selected', b.dataset.tab === name);
   for (const n of ['analyze', 'records', 'compare']) $('#tab-' + n).classList.toggle('hidden', n !== name);
