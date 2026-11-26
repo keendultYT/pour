@@ -2626,6 +2626,7 @@ async function loadSheet(full, W, H, file, down) {
   if (sc.s && sc.s > 0.85 && sc.s < 1.15) {
     scale = sc.s; const pct = (sc.s - 1) * 100;
     if (Math.abs(pct) > 1) warn.push(`인쇄 크기가 실제보다 ${Math.abs(pct).toFixed(1)}% ${pct < 0 ? '작게' : '크게'} 나왔어요 (${sc.how.join('·')} 기준). 이번 결과는 보정했지만, ‘실제 크기(100%)’로 다시 인쇄하면 더 정확해요.`);
+    if (sc.coinOnly) warn.push('동전으로만 인쇄 크기를 쟀어요. 동전은 두께와 반사 때문에 카드보다 덜 정확해요. 카드를 같이 올리면 더 정확해요.');
   } else warn.push('카드나 동전이 안 보여서 인쇄 크기를 확인하지 못했어요. 100%로 인쇄했다고 보고 계산했어요.');
   const um = 1000 * scale / k;
   if (um > 110) warn.push(`해상도가 낮아요 (1픽셀 ≈ ${um.toFixed(0)}µm). 시트를 화면에 꽉 차게, 원본 해상도로 찍어 주세요.`);
@@ -2666,43 +2667,61 @@ function sheetPatch(fctx, W, H, Hm, x0, y0, wmm, hmm, res) {
 }
 function sheetScale(fctx, W, H, Hm) {
   const ests = [], how = [];
-  // 카드: 종이와 다른 칸이 이어지는 가로·세로 길이
-  const C = SHEET.card, R = 4, cp = sheetPatch(fctx, W, H, Hm, C.x - 4, C.y - 3, C.w + 8, C.h + 6, R);
+  // 카드: 종이와 다른 칸의 바깥 가장자리 (가운데 흰 로고가 있어도 끊기지 않게 첫·마지막 줄로 잼)
+  const C = SHEET.card, R = 4, cp = sheetPatch(fctx, W, H, Hm, C.x - 6, C.y - 4, C.w + 12, C.h + 8, R);
   if (cp) {
-    const Ls = Array.from(cp.L).sort((a, b) => a - b), paper = Ls[Math.floor(Ls.length * 0.9)];
+    const Ls = Array.from(cp.L).sort((a, b) => a - b), paper = Ls[Math.floor(Ls.length * 0.95)];
     const m0 = i => Math.abs(cp.L[i] - paper) > 28 || cp.Sa[i] > 0.2;
     const inner = []; for (let i = 0; i < cp.L.length; i++) if (m0(i)) inner.push(cp.L[i]); inner.sort((a, b) => a - b);
     const core = inner.length ? inner[inner.length >> 1] : paper, half = Math.abs(core - paper) / 2;   // 가장자리 = 종이와 카드의 중간 밝기
-    const m = half > 14 ? (i => Math.abs(cp.L[i] - paper) > half) : m0;
+    const m = half > 14 ? (i => Math.abs(cp.L[i] - paper) > half || cp.Sa[i] > 0.3) : m0;
     const col = new Float32Array(cp.w), row = new Float32Array(cp.h);
     for (let j = 0; j < cp.h; j++) for (let i = 0; i < cp.w; i++) if (m(j * cp.w + i)) { col[i]++; row[j]++; }
-    const run = (arr, n, f) => { let best = 0, cur = 0; for (let i = 0; i < arr.length; i++) { if (arr[i] / n > f) { cur++; best = Math.max(best, cur); } else cur = 0; } return best; };
-    const wmm = run(col, cp.h, 0.45) / R, hmm = run(row, cp.w, 0.45) / R;
-    if (wmm > 80 && wmm < 92 && hmm > 50 && hmm < 58) { ests.push((C.w / wmm + C.h / hmm) / 2); how.push('카드'); }
+    const span = (arr, n) => { let best = 0, cur = 0; for (let i = 0; i < arr.length; i++) { if (arr[i] / n > 0.3) { cur++; best = Math.max(best, cur); } else cur = 0; } return best; };   // 이어진 가장 긴 구간 (위·아래 안내 글자는 떨어져 있음)
+    const wmm = span(col, cp.h) / R, hmm = span(row, cp.w) / R;
+    if (wmm > 78 && wmm < 94 && hmm > 49 && hmm < 60 && Math.abs((wmm / hmm) / (C.w / C.h) - 1) < 0.04) { ests.push((C.w / wmm + C.h / hmm) / 2); how.push('카드'); }
   }
-  // 동전: 가운데에서 이어진 어두운·색 있는 덩어리의 가로·세로
-  for (const c of SHEET.coins) {
-    const R2 = 10, pad = c.d / 2 + 5, p = sheetPatch(fctx, W, H, Hm, c.cx - pad, c.cy - pad, 2 * pad, 2 * pad, R2);
-    if (!p) continue;
-    const Ls = Array.from(p.L).sort((a, b) => a - b), paper = Ls[Math.floor(Ls.length * 0.9)];
-    const m = new Uint8Array(p.w * p.h); for (let i = 0; i < m.length; i++) m[i] = (paper - p.L[i] > 35 || p.Sa[i] > 0.22) ? 1 : 0;
-    let seed = -1; const cx = p.w >> 1, cy = p.h >> 1;
-    for (let r = 0; r < 3 * R2 && seed < 0; r++) for (let dy = -r; dy <= r && seed < 0; dy++) for (let dx = -r; dx <= r; dx++) { const i = (cy + dy) * p.w + cx + dx; if (m[i]) { seed = i; break; } }
-    if (seed < 0) continue;
-    {   // 1차로 이어진 덩어리의 밝기 → 종이와의 중간 밝기로 다시 나누기
-      const st0 = [seed], seen = new Uint8Array(m.length), vals = []; seen[seed] = 1;
-      while (st0.length) { const i = st0.pop(), x = i % p.w; vals.push(p.L[i]); for (const j of [i - 1, i + 1, i - p.w, i + p.w]) if (j >= 0 && j < m.length && m[j] && !seen[j] && Math.abs((j % p.w) - x) <= 1) { seen[j] = 1; st0.push(j); } }
-      vals.sort((a, b) => a - b); const core = vals[vals.length >> 1], half = (paper - core) / 2;
-      if (half > 15) for (let i = 0; i < m.length; i++) m[i] = (paper - p.L[i] > half) ? 1 : 0;
-      if (!m[seed]) continue;
+  // 동전: 카드 오른쪽 넓은 칸에서 둥근 덩어리를 찾아 원 반지름을 잼 (자리에서 조금 벗어나도 됨). 은색 동전은 종이와 밝기가 비슷해서 밝기·색·결을 같이 봄
+  const coins = [];
+  const R2 = 6, X0 = 126, Y0 = 156, cw = 80, ch = 82, p = sheetPatch(fctx, W, H, Hm, X0, Y0, cw, ch, R2);
+  if (p) {
+    const w = p.w, h = p.h, L = p.L, Ls = Array.from(L).sort((a, b) => a - b), paper = Ls[Math.floor(Ls.length * 0.6)];
+    let m = new Uint8Array(w * h);
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x; let t = 0; for (const j of [i - 1, i + 1, i - w, i + w]) t = Math.max(t, Math.abs(L[i] - L[j]));
+      m[i] = (Math.abs(L[i] - paper) > 18 || p.Sa[i] > 0.12 || t > 8) ? 1 : 0;
     }
-    const st = [seed]; m[seed] = 2; let x0 = p.w, x1 = 0, y0 = p.h, y1 = 0;
-    while (st.length) { const i = st.pop(), x = i % p.w, y = (i / p.w) | 0; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
-      for (const j of [i - 1, i + 1, i - p.w, i + p.w]) if (j >= 0 && j < m.length && m[j] === 1 && Math.abs((j % p.w) - x) <= 1) { m[j] = 2; st.push(j); } }
-    const dmm = ((x1 - x0 + 1) + (y1 - y0 + 1)) / 2 / R2;
-    if (Math.abs(dmm / c.d - 1) < 0.12 && Math.abs((x1 - x0) - (y1 - y0)) < 0.12 * (x1 - x0)) { ests.push(c.d / dmm); how.push(c.name); }
+    const morph = (src, grow) => { const o = new Uint8Array(w * h); for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) { const i = y * w + x; const n = src[i - 1] + src[i + 1] + src[i - w] + src[i + w] + src[i]; o[i] = grow ? (n > 0 ? 1 : 0) : (n === 5 ? 1 : 0); } return o; };
+    m = morph(morph(morph(morph(m, 1), 1), 0), 0);           // 닫기: 결 사이 빈틈 메우기
+    const lab = new Int32Array(w * h).fill(-1), blobs = [];
+    for (let s0 = 0; s0 < w * h; s0++) {
+      if (!m[s0] || lab[s0] >= 0) continue;
+      const st = [s0], pix = []; lab[s0] = blobs.length;
+      while (st.length) { const i = st.pop(); pix.push(i); const x = i % w; for (const j of [i - 1, i + 1, i - w, i + w]) if (j >= 0 && j < w * h && m[j] && lab[j] < 0 && Math.abs((j % w) - x) <= 1) { lab[j] = blobs.length; st.push(j); } }
+      blobs.push(pix);
+    }
+    for (const pix of blobs) {
+      let x0 = w, x1 = 0, y0 = h, y1 = 0, sx = 0, sy = 0;
+      for (const i of pix) { const x = i % w, y = (i / w) | 0; sx += x; sy += y; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      const bw = (x1 - x0 + 1) / R2, bh = (y1 - y0 + 1) / R2;
+      if (bw < 19 || bw > 31 || bh < 19 || bh > 31 || Math.abs(bw / bh - 1) > 0.1 || pix.length / ((x1 - x0 + 1) * (y1 - y0 + 1)) < 0.65) continue;
+      // 가운데에서 72방향으로 바깥 경계까지 거리 → 중앙값 (한쪽 그림자에 덜 흔들림)
+      const cx = sx / pix.length, cy = sy / pix.length, rs = [];
+      for (let k = 0; k < 72; k++) { const a = k / 72 * 2 * Math.PI; let rr = 0; for (let r = 1; r < 20 * R2; r++) { const x = Math.round(cx + r * Math.cos(a)), y = Math.round(cy + r * Math.sin(a)); if (x < 0 || y < 0 || x >= w || y >= h) break; if (lab[y * w + x] === lab[pix[0]]) rr = r; } rs.push(rr + 0.5); }
+      rs.sort((a, b) => a - b);
+      const dmm = 2 * rs[Math.floor(rs.length * 0.25)] / R2, pcx = X0 + cx / R2, pcy = Y0 + cy / R2;   // 옆면·그림자로 한쪽이 커 보여서 아래쪽 값
+      // 어느 동전인지: 카드로 잰 배율이 있으면 크기로, 없으면 가까운 자리로
+      let coin = null;
+      if (ests.length) { const sc0 = ests[0]; coin = SHEET.coins.reduce((a, c) => Math.abs(c.d / sc0 - dmm) < Math.abs(a.d / sc0 - dmm) ? c : a); }
+      else coin = SHEET.coins.reduce((a, c) => Math.hypot(c.cx - pcx, c.cy - pcy) < Math.hypot(a.cx - pcx, a.cy - pcy) ? c : a);
+      const est = coin.d / dmm;
+      if (est > 0.85 && est < 1.15 && !how.includes(coin.name)) {
+        coins.push([est, coin.name]);   // 카드가 있으면 카드만 씀 (동전은 두께·반사로 덜 정확)
+      }
+    }
   }
-  return { s: ests.length ? ests.reduce((a, b) => a + b, 0) / ests.length : null, how, ests };
+  if (!ests.length && coins.length) { coins.forEach(([e, n]) => { ests.push(e); how.push(n); }); }   // 카드가 없을 때만 동전
+  return { s: ests.length ? ests.reduce((a, b) => a + b, 0) / ests.length : null, how, ests, coinOnly: !how.includes('카드') && ests.length > 0 };
 }
 
 /* 측정 방법: 코스터 / 인쇄 시트 (기억) */
