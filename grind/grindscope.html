@@ -131,6 +131,13 @@ summary{cursor:pointer;color:var(--mute);font-size:13px}
 .rec .meta b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rec .meta small{color:var(--mute)}
 .rec.child{margin-left:22px;opacity:.85;border-style:dashed}
+table.cmp small.burr{display:block;font-size:.8em;color:var(--mute);margin:1px 0 0 16px;max-width:11em;overflow:hidden;text-overflow:ellipsis}
+.rectool{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.rectool select{flex:1 1 140px;width:auto;min-width:0;padding:7px 10px;font-size:13px}
+.seg.acts button{color:var(--ink);border-left:1px solid var(--line)}
+.seg.acts button:first-child{border-left:0}
+.seg.acts button.go{background:var(--accent);color:var(--accent-ink)}
+.seg.acts button:disabled{opacity:.4}
 .mtag{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:6px;margin-right:5px;vertical-align:1px}
 .mtag.sheet{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
 .mtag.coaster{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
@@ -172,7 +179,7 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
 <!-- ============ 분석 ============ -->
 <section id="tab-analyze">
   <div class="panel">
-    <h2>1. 사진</h2>
+    <h2>사진</h2>
     <div class="srcmode"><div class="seg" id="srcMode" role="group" aria-label="측정 방법"><button type="button" data-src="sheet">인쇄 시트</button><button type="button" data-src="coaster">DiFluid 코스터</button></div><button type="button" class="btn" id="btnSheet" hidden>🖨 시트 PDF 받기</button></div>
     <div class="calline" id="calLine" hidden></div>
     <div class="btns">
@@ -198,7 +205,7 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
   </div>
 
   <div class="panel hidden" id="panelWork">
-    <h2>2. 확인 · 보정</h2>
+    <h2>확인 · 보정</h2>
     <div class="stage" id="stage">
       <canvas id="view" width="900" height="900"></canvas>
       <div class="tools">
@@ -248,7 +255,7 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
   </div>
 
   <div class="panel hidden" id="panelResult">
-    <h2>3. 결과</h2>
+    <h2>결과</h2>
     <div class="grid-stats" id="statsGrid"></div>
     <div class="hint" id="statsNote" style="margin-top:8px"></div>
     <div class="row" style="margin-top:12px;align-items:end">
@@ -262,7 +269,7 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
   </div>
 
   <div class="panel hidden" id="panelSave">
-    <h2>4. 기록 저장</h2>
+    <h2>기록 저장</h2>
     <div class="row">
       <div><label>그라인더</label><select id="mGrinder"></select></div>
       <div><label>버</label><input type="text" id="mBurr" data-sg="burr" autocomplete="off" placeholder="예: Lebrew 필터 버"></div>
@@ -286,13 +293,9 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
 <section id="tab-records" class="hidden">
   <div class="panel">
     <h2>기록</h2>
-    <div class="row" style="align-items:end">
-      <div><label>그라인더 필터</label><select id="fGrinder"><option value="">전체</option></select></div>
-      <div class="btns">
-        <button class="btn primary" id="btnToCompare">선택 비교 →</button>
-        <button class="btn" id="btnSelAll">전체 선택</button>
-        <button class="btn" id="btnMerge">🔗 2~3장 합치기</button>
-      </div>
+    <div class="rectool">
+      <select id="fGrinder" aria-label="그라인더 거르기"><option value="">모든 그라인더</option></select>
+      <span class="seg acts"><button type="button" id="btnSelAll">전체 선택</button><button type="button" id="btnMerge">🔗 합치기</button><button type="button" class="go" id="btnToCompare">비교 →</button></span>
     </div>
     <div id="recList" style="margin-top:12px"></div>
     <div class="btns" style="margin-top:10px">
@@ -1616,6 +1619,13 @@ function drawChart(cv, cfg, opt = {}) {
       let label = o.s.label || '';
       while (g.measureText(label).width > colW - 22 && label.length > 3) label = label.slice(0, -2);
       g.fillText(label, x + 14, y);
+      const lw = g.measureText(label).width, room = colW - 22 - lw - 6;
+      if (o.s.burr && room > 24) {
+        const f0 = g.font; g.font = f0.replace(/(\d+)px/, (_, n) => Math.round(n * 0.8) + 'px');
+        let b = o.s.burr; while (g.measureText(b).width > room && b.length > 2) b = b.slice(0, -2) + '…';
+        if (b.length > 2) { g.fillStyle = theme.mute; g.fillText(b, x + 14 + lw + 6, y); }
+        g.font = f0;
+      }
     });
   }
   // 테두리
@@ -1747,8 +1757,9 @@ function askModal({ title, message, fields = [], ok = '확인', danger = false }
   });
 }
 
-function metaLabel(m) {
-  const t = [m.grinder, m.burr ? `(${m.burr})` : '', m.setting].filter(Boolean).join(' ');
+function metaLabel(m) {                          // 98L-12 (버 이름은 따로 작게 표시)
+  const g = (m.grinder || '').trim(), st = String(m.setting || '').trim();
+  const t = g && st ? `${g}-${st}` : (g || st);
   return t || m.beans || (m.ts ? fmtDate(m.ts) : '');
 }
 
@@ -1964,7 +1975,7 @@ function refreshRecords() {
   $('#recCount').textContent = nVis ? `(${nVis})` : '';
   const grinders = Array.from(new Set(S.records.map(r => r.grinder).filter(Boolean)));
   const f = $('#fGrinder'), cur = f.value;
-  f.innerHTML = '<option value="">전체</option>' + grinders.map(g => `<option>${esc(g)}</option>`).join('');
+  f.innerHTML = '<option value="">모든 그라인더</option>' + grinders.map(g => `<option>${esc(g)}</option>`).join('');
   f.value = grinders.includes(cur) ? cur : '';
   renderRecords();
 }
@@ -1977,7 +1988,7 @@ function renderRecords() {
   const top = S.records.filter(r => (!filt || r.grinder === filt) && !parentOf.has(r.id));   // 합친 원본은 합친 기록 밑으로
   const list = [];
   top.forEach(r => { list.push(r); if (r.merged && S.openMerged.has(r.id)) (r.mergedFrom || []).forEach(id => { const c = S.records.find(x => x.id === id); if (c) list.push(c); }); });
-  const box = $('#recList');
+  const box = $('#recList'); updSelBtns();
   if (!list.length) { box.innerHTML = '<div class="empty">아직 기록이 없어요. 분석 탭에서 사진을 분석하고 저장해보세요.</div>'; return; }
   const brews = pourBrews();
   box.innerHTML = list.map(r => {
@@ -1987,7 +1998,7 @@ function renderRecords() {
       <input type="checkbox" ${S.sel.has(r.id) ? 'checked' : ''} aria-label="선택">
       <img src="${r.thumb || ''}" alt="">
       <div class="meta"><b><span class="mtag ${r.method === 'sheet' ? 'sheet' : 'coaster'}">${r.method === 'sheet' ? '시트' : '코스터'}</span>${esc(metaLabel(r) || '(이름 없음)')}</b>
-        <small>${esc(r.beans || '')}${r.beans ? ' · ' : ''}${fmtDate(r.ts)}</small><br>
+        <small>${[r.burr, r.beans].filter(Boolean).map(esc).join(' · ')}${r.burr || r.beans ? ' · ' : ''}${fmtDate(r.ts)}</small><br>
         <small>D50 <b style="display:inline">${fmt(st.d50)}</b>µm · span ${fmt(st.span, 2)} · ${st.n}개</small>${r.merged ? `<br><small>🔗 ${r.merged}장 합침 · 장별 D50 ${fmt(Math.min(...r.parts.map(p => p.d50)))}–${fmt(Math.max(...r.parts.map(p => p.d50)))} · D10 ${fmt(Math.min(...r.parts.map(p => p.d10)))}–${fmt(Math.max(...r.parts.map(p => p.d10)))}µm</small>` : ''}
         ${bw.length ? `<br><small class="pbw">☕ 이 분쇄로 내린 추출 ${bw.length}번 · 최근 ${esc(bw[0].name)} ${fmtT(bw[0].t)}${bw[0].endMin != null ? (bw[0].t < bw[0].endMin - 10 ? ' (빨리 끝남)' : bw[0].t > bw[0].endMax + 10 ? ' (늦게 끝남)' : ' (목표 안)') : ''}</small>` : ''}
         ${hasKids ? `<br><button type="button" class="kids" data-kids="${r.id}">${S.openMerged.has(r.id) ? '원본 접기 ▴' : `원본 ${r.merged}장 보기 ▾`}</button>` : ''}${child ? '<br><small class="childnote">합친 기록의 원본</small>' : ''}</div>
@@ -1995,9 +2006,15 @@ function renderRecords() {
     </div>`;
   }).join('');
 }
+function updSelBtns() {
+  const n = S.sel.size;
+  $('#btnToCompare').textContent = n ? `비교 ${n} →` : '비교 →';
+  $('#btnMerge').disabled = n < 2 || n > 3;
+}
 $('#recList').addEventListener('change', e => {
   const row = e.target.closest('.rec'); if (!row) return;
   if (e.target.checked) S.sel.add(row.dataset.id); else S.sel.delete(row.dataset.id);
+  updSelBtns();
 });
 $('#recList').addEventListener('click', e => {
   const k = e.target.closest('[data-kids]'); if (!k) return;
@@ -2075,7 +2092,7 @@ function mergedNote(r) {                        // 합친 기록: 장별 D50 차
 }
 function cmpSeries() {
   const recs = S.records.filter(r => S.sel.has(r.id)).sort((a, b) => a.ts - b.ts).slice(0, 8);
-  return recs.map((r, i) => ({ d: r.d, label: (metaLabel(r) || fmtDate(r.ts)) + (r.merged ? ` 🔗${r.merged}장` : ''), color: PALETTE[i % PALETTE.length], rec: r }));
+  return recs.map((r, i) => ({ d: r.d, label: (metaLabel(r) || fmtDate(r.ts)) + (r.merged ? ` 🔗${r.merged}장` : ''), burr: r.burr || '', color: PALETTE[i % PALETTE.length], rec: r }));
 }
 // 비교 탭 그래프 설정: 기록이 1개이거나 표에서 하나를 누르면 그 기록만 막대 그래프로
 function cmpCfg(ser) {
@@ -2101,7 +2118,7 @@ function renderCompare() {
   tbl.innerHTML = `<tr><th>기록 (${BLc} 기준)</th><th>입자수</th><th>D10</th><th>D50</th><th>D90</th><th>평균</th><th>span</th><th>미분&lt;${fu}µm</th></tr>` +
     ser.map(s => {
       const st = Core.stats(s.d, fu, S.cmpMode);
-      return `<tr data-id="${esc(String(s.rec.id))}"${cfg.focus === s && ser.length > 1 ? ' class="on"' : ''}><td><span class="dot" style="background:${s.color}"></span>${esc(s.label)}</td><td>${st.n}</td><td>${fmt(st.d10)}</td><td><b>${fmt(st.d50)}</b></td><td>${fmt(st.d90)}</td><td>${fmt(st.mean)}</td><td>${fmt(st.span, 2)}</td><td>${fmt(st.fines, 1)}%</td></tr>`;
+      return `<tr data-id="${esc(String(s.rec.id))}"${cfg.focus === s && ser.length > 1 ? ' class="on"' : ''}><td><span class="dot" style="background:${s.color}"></span>${esc(s.label)}${s.burr ? `<small class="burr">${esc(s.burr)}</small>` : ''}</td><td>${st.n}</td><td>${fmt(st.d10)}</td><td><b>${fmt(st.d50)}</b></td><td>${fmt(st.d90)}</td><td>${fmt(st.mean)}</td><td>${fmt(st.span, 2)}</td><td>${fmt(st.fines, 1)}%</td></tr>`;
     }).join('');
 }
 
