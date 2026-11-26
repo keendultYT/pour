@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>GrindScope 입자 분석</title>
 <link rel="manifest" href="../manifest.json">
+<meta name="color-scheme" content="only light">
 <meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b0d10" media="(prefers-color-scheme: dark)">
 <script>if(/SamsungBrowser/.test(navigator.userAgent))document.documentElement.classList.add("ssd")</script>
@@ -23,15 +24,19 @@
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){ --bg:#0b0d10; --panel:#14181d; --ink:#eef1f5; --mute:#a3adbb; --line:#222831;
-    --accent:#2dd4bf; --accent-ink:#062520; --good:#34d399; --warn:#fbbf24; --bad:#f87171; --grid:#1d232b; --chartbg:#14181d; color-scheme:dark; }
+    --accent:#2dd4bf; --accent-ink:#062520; --good:#34d399; --warn:#fbbf24; --bad:#f87171; --grid:#1d232b; --chartbg:#14181d; }
   /* 삼성 인터넷 '어둡게 보기'가 회색 글씨를 어둡게 덧칠하는 문제: 흰색+투명도로 (Pour Guide와 같은 대책) */
   html.ssd:not([data-theme="light"]){ --ink:#fff; --mute:rgba(255,255,255,.64); }
 }
 :root[data-theme="dark"]{ --bg:#0b0d10; --panel:#14181d; --ink:#eef1f5; --mute:#a3adbb; --line:#222831;
-  --accent:#2dd4bf; --accent-ink:#062520; --good:#34d399; --warn:#fbbf24; --bad:#f87171; --grid:#1d232b; --chartbg:#14181d; color-scheme:dark; }
+  --accent:#2dd4bf; --accent-ink:#062520; --good:#34d399; --warn:#fbbf24; --bad:#f87171; --grid:#1d232b; --chartbg:#14181d; }
+/* 삼성 인터넷 '어둡게 보기'·크롬 자동 다크가 색을 덧칠하지 않게 (레시피북과 같은 방식): 페이지는 only light, 어두운 색은 직접 칠함 */
+:root{color-scheme:only light}
+input,select,textarea{color-scheme:light}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) input,:root:not([data-theme="light"]) select,:root:not([data-theme="light"]) textarea{color-scheme:dark} }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Pretendard","Noto Sans KR","Apple SD Gothic Neo",system-ui,sans-serif;-webkit-text-size-adjust:100%}
-body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+body{padding-bottom:calc(24px + env(safe-area-inset-bottom))}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
 header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:baseline;gap:10px}
 #recList .pbw{color:var(--accent)}
@@ -51,7 +56,7 @@ header .install{margin-left:auto;align-self:center;border:1px solid var(--accent
 /* PC·태블릿: 탭을 위쪽 제목 줄로 */
 @media (min-width:768px){
   body{padding-bottom:32px}
-  header,body .status{padding-left:max(16px,calc((100vw - 980px) / 2 + 16px));padding-right:max(16px,calc((100vw - 980px) / 2 + 16px))}
+  header{padding-left:max(16px,calc((100vw - 980px) / 2 + 16px));padding-right:max(16px,calc((100vw - 980px) / 2 + 16px))}
   header{align-items:center}
   header nav.tabs{position:static;margin-left:auto;background:none;border:0;padding:0;gap:4px;z-index:auto}
   header nav.tabs button{flex:none;padding:6px 16px;border-radius:999px;font-size:14px}
@@ -62,9 +67,11 @@ header .install{margin-left:auto;align-self:center;border:1px solid var(--accent
   .toast{bottom:32px}
 }
 main{max-width:980px;margin:0 auto;padding:14px max(16px,env(safe-area-inset-right,0px)) 14px max(16px,env(safe-area-inset-left,0px))}
-nav.tabs{position:fixed;bottom:0;left:0;right:0;z-index:40;background:var(--panel);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
-nav.tabs button{flex:1;padding:12px 0 10px;border:0;background:none;color:var(--mute);font:inherit;font-size:13px;font-weight:600}
-nav.tabs button[aria-selected="true"]{color:var(--accent)}
+/* 분석/기록/비교: 레시피북의 레시피/기록/커뮤니티와 같은 모양으로 위쪽에 */
+.segwrap{max-width:980px;margin:0 auto;padding:12px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
+nav.tabs{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px}
+nav.tabs button{flex:1;height:36px;border:0;border-radius:9px;background:none;color:var(--mute);font:inherit;font-size:14px;font-weight:700}
+nav.tabs button[aria-selected="true"]{background:var(--line);color:var(--ink)}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:14px}
 .panel h2{font-size:14px;margin:0 0 10px;font-weight:700}
 .row{display:flex;gap:10px;flex-wrap:wrap}
@@ -79,7 +86,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .btn{display:inline-block;text-align:center}
 .filebtn{position:relative;overflow:hidden;cursor:pointer}
 .filebtn input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:300px}
-.status{font-size:12px;padding:6px max(16px,env(safe-area-inset-right,0px)) 6px max(16px,env(safe-area-inset-left,0px));background:var(--panel);border-bottom:1px solid var(--line);color:var(--mute)}
+.status{max-width:980px;margin:0 auto;font-size:12px;padding:8px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));color:var(--mute)}
+.status.err{border-radius:10px;margin-top:8px;padding:8px 12px}
 .status.ok{color:var(--good)}
 .status.err{color:#fff;background:var(--bad);font-size:13px;white-space:pre-wrap}
 .btns{display:flex;gap:8px;flex-wrap:wrap}
@@ -136,7 +144,8 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
 </style>
 </head>
 <body>
-<header><nav class="booktabs"><a href="../">레시피북</a><a class="on" aria-current="page">입자 분석</a></nav><h1 class="sr">GrindScope</h1><span>코스터 위 가루 사진 → 입자 크기·분포</span><nav class="tabs"><button data-tab="analyze" aria-selected="true">분석</button><button data-tab="records" aria-selected="false">기록 <span id="recCount"></span></button><button data-tab="compare" aria-selected="false">비교</button></nav><button class="install hidden" id="btnInstall" type="button">＋ 앱 설치</button></header>
+<header><nav class="booktabs"><a href="../">레시피북</a><a class="on" aria-current="page">입자 분석</a></nav><h1 class="sr">GrindScope</h1><span>코스터 위 가루 사진 → 입자 크기·분포</span><button class="install hidden" id="btnInstall" type="button">＋ 앱 설치</button></header>
+<div class="segwrap"><nav class="tabs"><button data-tab="analyze" aria-selected="true">분석</button><button data-tab="records" aria-selected="false">기록 <span id="recCount"></span></button><button data-tab="compare" aria-selected="false">비교</button></nav></div>
 <div class="status" id="status">⏳ 앱 준비 중…</div>
 <main>
 
@@ -219,7 +228,7 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
   <div class="panel hidden" id="panelSave">
     <h2>4. 기록 저장</h2>
     <div class="row">
-      <div><label>그라인더</label><input type="text" id="mGrinder" data-sg="grinder" autocomplete="off" placeholder="예: Yehjen 98L"></div>
+      <div><label>그라인더</label><select id="mGrinder"></select></div>
       <div><label>버</label><input type="text" id="mBurr" data-sg="burr" autocomplete="off" placeholder="예: Lebrew 필터 버"></div>
     </div>
     <div class="row" style="margin-top:8px">
@@ -1105,6 +1114,45 @@ function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTi
 function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function fmtDate(ts) { const d = new Date(ts); return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+/* 그라인더 목록 (레시피북·입자 분석 공통, 두 파일에 같은 코드). 내 그라인더는 localStorage 'pour.grinders'에 이름으로 저장 */
+const GRINDER_PRESETS = ['코만단테 C40', '1Zpresso K-Ultra', '1Zpresso K-Max', '1Zpresso ZP6 Special', '1Zpresso J-Max', '1Zpresso X-Ultra', '1Zpresso Q2',
+  '타임모어 C3', '타임모어 C2', '타임모어 S3', '타임모어 Sculptor 064', '타임모어 Sculptor 078', '킨그라인더 K6', '킨그라인더 K4',
+  '펠로우 오드 Gen 2', '바라짜 엔코어', '바라짜 버추오소+', '말코닉 EK43', '니치 제로', 'DF64', 'DF83', '라곰 P64', '위필라 유니폼', '예젠 98L',
+  '하리오 스케르톤', '칼리타 넥스트G', '후지로얄 R-220'];
+const gKey = g => String(g || '').trim().toLowerCase();
+function myGrinders(extra) {
+  let reg = []; try { reg = JSON.parse(localStorage.getItem('pour.grinders') || '[]'); } catch (e) { }
+  const out = [], seen = new Set();
+  for (const g of [...(extra || []), ...reg]) { const k = gKey(g); if (k && !seen.has(k)) { seen.add(k); out.push(String(g).trim()); } }
+  return out;
+}
+function addMyGrinder(g) {
+  g = String(g || '').trim(); if (!g) return;
+  let reg = []; try { reg = JSON.parse(localStorage.getItem('pour.grinders') || '[]'); } catch (e) { }
+  if (!reg.some(x => gKey(x) === gKey(g))) { reg.push(g); try { localStorage.setItem('pour.grinders', JSON.stringify(reg)); } catch (e) { } }
+}
+function grinderOptions(cur, extra) {
+  const e = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const mine = myGrinders(extra); if (cur && !mine.some(x => gKey(x) === gKey(cur))) mine.unshift(cur);
+  const rest = GRINDER_PRESETS.filter(p => !mine.some(x => gKey(x) === gKey(p)));
+  const opt = g => `<option${gKey(g) === gKey(cur) ? ' selected' : ''}>${e(g)}</option>`;
+  return (cur ? '' : '<option value="" selected>그라인더 고르기</option>') +
+    (mine.length ? `<optgroup label="내 그라인더">${mine.map(opt).join('')}</optgroup>` : '') +
+    `<optgroup label="${mine.length ? '다른 그라인더' : '목록에서 고르기'}">${rest.map(opt).join('')}</optgroup>` +
+    '<option value="+">+ 목록에 없어요 (직접 입력)</option>';
+}
+/* select에 붙이기: 고르면 내 그라인더에 넣고 onPick(이름). '직접 입력'은 이름을 물어봄 */
+function bindGrinderSelect(sel, extra, onPick) {
+  let last = sel.value;
+  sel.onchange = () => {
+    let v = sel.value;
+    if (v === '+') { v = (prompt('그라인더 이름', '') || '').trim(); if (!v) { sel.value = last; return; } }
+    addMyGrinder(v); sel.innerHTML = grinderOptions(v, typeof extra === 'function' ? extra() : extra); last = v;
+    onPick && onPick(v);
+  };
+}
+function recGrinders() { return Array.from(new Set(S.records.slice().sort((a, b) => b.ts - a.ts).map(r => (r.grinder || '').trim()).filter(Boolean))).concat(pourBrews().map(h => h.grinder).filter(Boolean)); }
+function setGrinderSel(sel, v) { sel.innerHTML = grinderOptions(v || '', recGrinders()); }
 /* 레시피북(Pour Guide) 추출 기록 읽기: 같은 주소의 localStorage 'pourGuide.v1'. 통합 3단계 */
 function pourBrews() { try { const o = JSON.parse(localStorage.getItem('pourGuide.v1') || '{}'); return Array.isArray(o.history) ? o.history : []; } catch (e) { return []; } }
 function brewsFor(list, r) {
@@ -1583,6 +1631,7 @@ function attachSuggest(inp, key, getGrinder) {
   inp.addEventListener('keydown', e => { if (e.key === 'Escape') hideSuggest(); });
 }
 for (const inp of $$('input[data-sg]')) attachSuggest(inp, inp.dataset.sg, () => $('#mGrinder').value.trim());
+setGrinderSel($('#mGrinder'), ''); bindGrinderSelect($('#mGrinder'), recGrinders);
 addEventListener('scroll', e => { if (suggBox && !suggBox.contains(e.target)) suggPlace(); }, true);
 addEventListener('resize', () => suggPlace && suggPlace());
 document.addEventListener('pointerdown', e => { if (suggBox && !suggBox.contains(e.target) && e.target !== suggOwner) hideSuggest(); }, true);
@@ -1628,7 +1677,7 @@ function askModal({ title, message, fields = [], ok = '확인', danger = false }
   return new Promise(res => {
     const m = $('#modal'), box = $('#modalBox');
     box.innerHTML = `<h2>${esc(title)}</h2>` + (message ? `<p>${esc(message)}</p>` : '') +
-      fields.map((f, i) => `<label for="mf${i}">${esc(f.label)}</label><input type="text" id="mf${i}" value="${esc(f.value || '')}">`).join('') +
+      fields.map((f, i) => `<label for="mf${i}">${esc(f.label)}</label>` + (f.sg === 'grinder' ? `<select id="mf${i}">${grinderOptions(f.value || '', recGrinders())}</select>` : `<input type="text" id="mf${i}" value="${esc(f.value || '')}">`)).join('') +
       `<div class="btns" style="margin-top:12px"><button class="btn ${danger ? 'danger' : 'primary'}" id="mOk">${esc(ok)}</button><button class="btn" id="mCancel">취소</button></div>`;
     m.classList.remove('hidden');
     const close = v => { hideSuggest(); m.classList.add('hidden'); res(v); };
@@ -1636,7 +1685,7 @@ function askModal({ title, message, fields = [], ok = '확인', danger = false }
     $('#mCancel').onclick = () => close(null);
     m.onclick = e => { if (e.target === m) close(null); };
     const gi = fields.findIndex(x => x.sg === 'grinder');
-    fields.forEach((f, i) => { if (f.sg) attachSuggest($('#mf' + i), f.sg, () => gi >= 0 ? $('#mf' + gi).value.trim() : ''); });
+    fields.forEach((f, i) => { if (f.sg === 'grinder') bindGrinderSelect($('#mf' + i), recGrinders); else if (f.sg) attachSuggest($('#mf' + i), f.sg, () => gi >= 0 ? $('#mf' + gi).value.trim() : ''); });
     if (fields.length) $('#mf0').focus();
   });
 }
@@ -1798,7 +1847,7 @@ function onTap(cx, cy) {
 function prefillMeta() {
   try {
     const m = JSON.parse(localStorage.getItem('gs_meta') || '{}');
-    if (!$('#mGrinder').value) $('#mGrinder').value = m.grinder || '';
+    if (!$('#mGrinder').value) setGrinderSel($('#mGrinder'), m.grinder || '');
     if (!$('#mBurr').value) $('#mBurr').value = m.burr || '';
     if (!$('#mBeans').value) $('#mBeans').value = m.beans || '';
   } catch (e) { }
