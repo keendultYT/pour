@@ -40,10 +40,17 @@ body{padding-bottom:calc(24px + env(safe-area-inset-bottom))}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
 header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:baseline;gap:10px}
 #recList .pbw{color:var(--accent)}
+/* 촬영 팁 (2.18) */
+.tips{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:2px 12px}
+.tips summary{cursor:pointer;padding:9px 0;font-size:13.5px;font-weight:700;color:var(--ink)}
+.tips ol{margin:0 0 10px;padding-left:18px;font-size:12.5px;line-height:1.6;color:var(--mute)}
+.tips li{margin-bottom:4px}.tips li b{color:var(--ink)}
+.tips[data-mode="sheet"] .tip-coaster,.tips[data-mode="coaster"] .tip-sheet{display:none}
 /* 측정 방법 선택 (2.17) */
 .srcmode{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px}
 .srcmode .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .srcmode .btn{padding:7px 12px;font-size:13px}
+.srcmode .btn[hidden]{display:none}
 /* Pour 책갈피 탭 (레시피북 ↔ 입자 분석). 앱 설치 버튼은 Pour 앱 안이라 숨김 */
 header:has(.booktabs){align-items:flex-end;padding-top:16px;padding-bottom:0}
 header .booktabs{display:flex;align-items:flex-end;gap:4px;margin-bottom:-1px}
@@ -163,6 +170,18 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
       <label class="btn filebtn">🖼 사진 선택<input id="filePick" type="file" accept="image/*"></label>
     </div>
     <div class="hint" id="srcHint" style="margin-top:8px">코스터 원 전체가 나오게, 위에서 수직으로, 그림자 없이. 원본 해상도 그대로 올려주세요(메신저로 보내면 압축돼요).</div>
+    <details class="tips" id="tips"><summary>📸 정확하게 찍는 법</summary>
+      <ol>
+        <li><b>위에서 수직으로</b> · 폰을 종이와 평행하게 들어요. 기울면 가까운 쪽 가루가 크게 찍혀요.</li>
+        <li><b>광각(0.5배) 말고 1~2배로</b> · 조금 떨어져서 <b>2배 줌</b>으로 찍으면 가장자리 왜곡과 원근이 줄어요. 2배 렌즈가 없는 폰은 1배로 가까이 찍어요 (디지털 줌은 화질이 떨어져요).</li>
+        <li><b>그림자 없이</b> · 폰이나 손 그림자가 지지 않게, 천장 등 바로 아래는 피하고 창가처럼 옆에서 오는 밝은 빛이 좋아요. <b>플래시는 꺼요</b> (반사돼요).</li>
+        <li><b>초점</b> · 화면에서 가루를 눌러 초점을 맞추고, 흔들리지 않게 찍어요.</li>
+        <li><b>가루는 얇게</b> · 서로 겹치거나 뭉치지 않게 펼쳐요. 한 숟가락도 안 되는 적은 양이면 충분해요.</li>
+        <li class="tip-coaster"><b>코스터 전체가</b> 화면에 들어오되, 화면을 꽉 채울수록 정확해요.</li>
+        <li class="tip-sheet"><b>네 귀퉁이 표식이 모두</b> 들어오게, 카드나 동전도 자리에 올려 함께 찍어요. 종이가 휘지 않게 평평한 곳에 두세요.</li>
+        <li><b>원본으로</b> · 메신저로 보낸 사진은 압축돼서 작은 입자가 사라져요.</li>
+      </ol>
+    </details>
     <div class="drop" id="drop" style="margin-top:10px">여기에 사진을 끌어다 놓아도 돼요</div>
   </div>
 
@@ -2639,12 +2658,14 @@ function setSrcMode(m) {
   for (const b of $$('#srcMode button')) b.setAttribute('aria-pressed', b.dataset.src === m);
   $('#btnSheet').hidden = m !== 'sheet';
   $('#srcHint').textContent = m === 'sheet'
-    ? '인쇄 시트의 네 귀퉁이 검은 표식이 모두 나오게, 위에서 그림자 없이 찍어 주세요. 카드나 동전을 자리에 올리면 인쇄 크기도 확인해요.'
-    : '코스터 원 전체가 나오게, 위에서 수직으로, 그림자 없이. 원본 해상도 그대로 올려주세요(메신저로 보내면 압축돼요).';
+    ? '인쇄 시트 네 귀퉁이 표식이 모두 나오게, 위에서 수직으로 찍어 주세요.'
+    : '코스터 원 전체가 나오게, 위에서 수직으로 찍어 주세요.';
+  $('#tips').dataset.mode = m;
 }
 for (const b of $$('#srcMode button')) b.onclick = () => setSrcMode(b.dataset.src);
 $('#btnSheet').onclick = printSheet;
 setSrcMode(srcMode());
+try { if (!localStorage.getItem('gs_tips_seen')) { $('#tips').open = true; localStorage.setItem('gs_tips_seen', '1'); } } catch (e) { }   // 처음 한 번은 펼쳐서
 function switchTab(name) {
   for (const b of $$('nav.tabs button')) b.setAttribute('aria-selected', b.dataset.tab === name);
   for (const n of ['analyze', 'records', 'compare']) $('#tab-' + n).classList.toggle('hidden', n !== name);
