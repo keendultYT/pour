@@ -16,6 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Pour">
 <style>
 :root{
+  --bk-r:#047857; --bk-g:#2563eb;
   /* Pour 공통 색 (통합 2단계): 폰 설정이 밝으면 밝게, 어두우면 Pour Guide와 같은 어두운 색 */
   --bg:#f4f5f7; --panel:#ffffff; --ink:#101418; --mute:#5d6875; --line:#dde1e7;
   --accent:#0f766e; --accent-ink:#ffffff; --good:#047857; --warn:#b45309; --bad:#dc2626;
@@ -24,12 +25,12 @@
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){ --bg:#0b0d10; --panel:#14181d; --ink:#eef1f5; --mute:#a3adbb; --line:#222831;
-    --accent:#2dd4bf; --accent-ink:#062520; --good:#34d399; --warn:#fbbf24; --bad:#f87171; --grid:#1d232b; --chartbg:#14181d; --raise:#232b35; }
+    --accent:#2dd4bf; --accent-ink:#062520; --good:#34d399; --warn:#fbbf24; --bad:#f87171; --grid:#1d232b; --chartbg:#14181d; --raise:#232b35; --bk-r:#34d399; --bk-g:#3b82f6; }
   /* 삼성 인터넷 '어둡게 보기'가 회색 글씨를 어둡게 덧칠하는 문제: 흰색+투명도로 (Pour Guide와 같은 대책) */
   html.ssd:not([data-theme="light"]){ --ink:#fff; --mute:rgba(255,255,255,.64); }
 }
 :root[data-theme="dark"]{ --bg:#0b0d10; --panel:#14181d; --ink:#eef1f5; --mute:#a3adbb; --line:#222831;
-  --accent:#2dd4bf; --accent-ink:#062520; --good:#34d399; --warn:#fbbf24; --bad:#f87171; --grid:#1d232b; --chartbg:#14181d; --raise:#232b35; }
+  --accent:#2dd4bf; --accent-ink:#062520; --good:#34d399; --warn:#fbbf24; --bad:#f87171; --grid:#1d232b; --chartbg:#14181d; --raise:#232b35; --bk-r:#34d399; --bk-g:#3b82f6; }
 /* 삼성 인터넷 '어둡게 보기'·크롬 자동 다크가 색을 덧칠하지 않게 (레시피북과 같은 방식): 페이지는 only light, 어두운 색은 직접 칠함 */
 :root{color-scheme:only light}
 input,select,textarea{color-scheme:light}
@@ -56,6 +57,12 @@ header:has(.booktabs){align-items:flex-end;padding-top:16px;padding-bottom:0}
 header .booktabs{display:flex;align-items:flex-end;gap:4px;margin-bottom:-1px}
 header .booktabs a{padding:9px 16px 8px;border:1px solid var(--line);border-bottom-color:transparent;border-radius:12px 12px 0 0;background:var(--raise);color:var(--mute);font-size:15px;font-weight:700;text-decoration:none;white-space:nowrap}
 header .booktabs a.on{background:var(--bg);color:var(--ink);font-size:18px;padding-top:10px}
+/* 책갈피 색 (2.32): 레시피북 초록 · 입자 분석 파랑, 고른 쪽은 꽉 채움 */
+header:has(.booktabs){border-bottom:2px solid var(--bk-g)}
+header .booktabs a.bk-r{color:var(--bk-r);background:color-mix(in srgb,var(--bk-r) 14%,var(--bg));border-color:color-mix(in srgb,var(--bk-r) 45%,transparent)}
+header .booktabs a.bk-g{color:var(--bk-g);background:color-mix(in srgb,var(--bk-g) 14%,var(--bg));border-color:color-mix(in srgb,var(--bk-g) 45%,transparent)}
+header .booktabs a.on.bk-r{background:var(--bk-r);border-color:var(--bk-r);color:var(--panel)}
+header .booktabs a.on.bk-g{background:var(--bk-g);border-color:var(--bk-g);color:var(--panel)}
 header:has(.booktabs) > span{align-self:center}
 header .install{display:none!important}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
@@ -171,13 +178,13 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
 /* 초급/상급 (2.30) */
 html:not(.pro) .pro-only{display:none!important}
 html.pro .easy-only{display:none!important}
-.protog{margin-left:auto;align-self:center;display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:12.5px;font-weight:700;color:var(--mute);cursor:pointer;white-space:nowrap}
+.protog{margin-left:auto;align-self:center;display:flex;align-items:center;gap:7px;margin-bottom:6px;padding:4px 5px 4px 11px;border:1.5px solid var(--mute);border-radius:999px;background:var(--panel);font-size:12.5px;font-weight:800;color:var(--ink);cursor:pointer;white-space:nowrap}
 header:not(:has(.booktabs)) .protog{margin-bottom:0}
-.protog input{appearance:none;-webkit-appearance:none;width:34px;height:20px;border-radius:999px;background:var(--line);position:relative;margin:0;cursor:pointer;transition:background .15s}
+.protog input{appearance:none;-webkit-appearance:none;width:34px;height:20px;border-radius:999px;background:var(--mute);position:relative;margin:0;cursor:pointer;transition:background .15s}
 .protog input::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--panel);box-shadow:0 1px 2px rgba(0,0,0,.3);transition:left .15s}
-.protog input:checked{background:var(--accent)}
+.protog input:checked{background:var(--warn)}
 .protog input:checked::after{left:16px}
-html.pro .protog{color:var(--accent)}
+html.pro .protog{color:var(--warn);border-color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,var(--panel))}
 @media (pointer:coarse),(hover:none){.drop{display:none}}
 .guide[hidden]{display:none}
 .guide h2{display:flex;align-items:center}
@@ -230,7 +237,7 @@ td.dpos{color:var(--bad)} td.dneg{color:var(--accent)}
 </style>
 </head>
 <body>
-<header><nav class="booktabs"><a href="../">레시피북</a><a class="on" aria-current="page">입자 분석</a></nav><h1 class="sr">GrindScope</h1><span>코스터 위 가루 사진 → 입자 크기·분포</span><label class="protog" title="상급 기능 켜기"><input type="checkbox" id="proTog" aria-label="상급 모드">상급</label><button class="install hidden" id="btnInstall" type="button">＋ 앱 설치</button></header>
+<header><nav class="booktabs"><a class="bk-r" href="../">레시피북</a><a class="on bk-g" aria-current="page">입자 분석</a></nav><h1 class="sr">GrindScope</h1><span>코스터 위 가루 사진 → 입자 크기·분포</span><label class="protog" title="전문가 모드: 세부 설정·지도·차이 열 · 레시피북과 같이 바뀌어요">전문가 모드<input type="checkbox" id="proTog" aria-label="전문가 모드"></label><button class="install hidden" id="btnInstall" type="button">＋ 앱 설치</button></header>
 <div class="segwrap"><nav class="tabs"><button data-tab="analyze" aria-selected="true">분석</button><button data-tab="records" aria-selected="false">기록 <span id="recCount"></span></button><button data-tab="compare" aria-selected="false">비교</button></nav></div>
 <div class="status" id="status">⏳ 앱 준비 중…</div>
 <main>
@@ -3126,7 +3133,7 @@ function applyPro(on, user) {
   if (S.res) { if (T0 !== $('#rT').value || S0 !== $('#rS').value) reAnalyze(); else updateResults(); }
   renderRecords(); renderGuide();
   if (!$('#tab-compare').classList.contains('hidden')) { renderCompare(); if (on) renderMap(); }
-  if (user !== 'sync') toast(on ? '상급 모드: 세부 설정·지도·차이 열이 보여요 (레시피북도 같이)' : '기본 모드로 돌아왔어요 (레시피북도 같이)');
+  if (user !== 'sync') toast(on ? '전문가 모드 켬: 세부 설정·지도·차이 열이 보여요 (레시피북도 같이)' : '전문가 모드 끔: 쉬운 화면으로 돌아왔어요 (레시피북도 같이)');
 }
 $('#proTog').onchange = () => applyPro($('#proTog').checked, true);
 // 레시피북과 같은 토글: 다른 쪽에서 바꾸고 돌아오면 맞춤
