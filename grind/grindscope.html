@@ -3285,6 +3285,17 @@ function switchTab(name) {
   window.scrollTo(0, 0);
 }
 for (const b of $$('nav.tabs button[data-tab]')) b.onclick = () => switchTab(b.dataset.tab);
+/* 폰 뒤로가기 (2.45): 크게 보기·창 닫기 → 분석 탭으로 → 레시피북으로 */
+if (!(history.state && history.state.pg)) { try { history.pushState({ pg: 1 }, ''); } catch (e) { } }
+window.addEventListener('popstate', () => {
+  const zo = $('#zoomOv'), md = $('#modal');
+  let done = true;
+  if (zo && zo.classList.contains('on')) zo.classList.remove('on');
+  else if (md && !md.classList.contains('hidden')) { const c = $('#mCancel'); if (c) c.click(); else md.classList.add('hidden'); }
+  else if ($('#tab-analyze').classList.contains('hidden')) switchTab('analyze');
+  else done = false;
+  if (done) { try { history.pushState({ pg: 1 }, ''); } catch (e) { } } else history.back();   // 분석 탭이면 한 번에 레시피북으로
+});
 $('#tbCam').onclick = () => { switchTab('analyze'); $('#fileCamera').click(); };
 $('#tbSheet').onclick = () => { lsSet('gs_sheet_printed', '1'); renderGuide(); printSheet(); };
 
