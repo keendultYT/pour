@@ -2492,12 +2492,26 @@ async function sheetPdfBlob() {
   return new Blob(parts, { type: 'application/pdf' });
 }
 async function printSheet() {
+  // PDF를 먼저 만들고, 저장·공유는 다시 누르게 (공유는 누른 직후에만 허용돼서 PDF 만드는 동안 막힘)
   const b = $('#btnSheet'); b.disabled = true; spin(true, '시트 PDF 만드는 중…');
-  try {
-    await downloadBlob(await sheetPdfBlob(), 'pour-grind-sheet-A4.pdf', 'share');
-    await askModal({ title: '인쇄 시트 PDF', ok: '확인', message: 'PDF를 열어 인쇄할 때 배율을 꼭 ‘실제 크기(100%)’로, 용지는 A4로 골라 주세요. ‘페이지에 맞춤’으로 인쇄하면 크기가 줄어요. 인쇄한 뒤 눈금을 자로 재서 100mm인지 확인하면 좋아요.' });
-  } catch (e) { toast('PDF를 만들지 못했어요: ' + (e && e.message || e)); }
+  let blob;
+  try { blob = await sheetPdfBlob(); }
+  catch (e) { toast('PDF를 만들지 못했어요: ' + (e && e.message || e)); return; }
   finally { spin(false); b.disabled = false; }
+  const name = 'pour-grind-sheet-A4.pdf', file = new File([blob], name, { type: 'application/pdf' });
+  const canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+  const m = $('#modal'), box = $('#modalBox');
+  box.innerHTML = `<h2>인쇄 시트 PDF</h2><p>인쇄할 때 배율을 꼭 <b>실제 크기(100%)</b>, 용지는 <b>A4</b>로 골라 주세요. ‘페이지에 맞춤’으로 인쇄하면 크기가 줄어요. 인쇄한 뒤 눈금을 자로 재서 100mm인지 확인하면 좋아요.</p>
+    <div class="btns" style="margin-top:12px;flex-direction:column">${canShare ? '<button class="btn primary" id="pdfShare">📤 공유 · 프린터 앱으로 보내기</button>' : ''}<button class="btn${canShare ? '' : ' primary'}" id="pdfSave">📥 PDF 파일로 저장</button><button class="btn" id="pdfClose">닫기</button></div>`;
+  m.classList.remove('hidden');
+  const close = () => m.classList.add('hidden');
+  $('#pdfClose').onclick = close; m.onclick = e => { if (e.target === m) close(); };
+  if ($('#pdfShare')) $('#pdfShare').onclick = () => { navigator.share({ files: [file], title: 'Pour 입자 분석 시트' }).then(close).catch(err => { if (!(err && err.name === 'AbortError')) toast('공유하지 못했어요 · PDF 저장을 눌러 주세요'); }); };
+  $('#pdfSave').onclick = () => {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    toast('다운로드 폴더에 저장했어요 · 파일 앱에서 열어 인쇄해 주세요'); close();
+  };
 }
 
 /* 4점 호모그래피: 페이지 mm (x,y) → 사진 픽셀 (u,v) */
