@@ -2537,7 +2537,7 @@ function homography(src, dst) {
 function findSheetMarks(G, w, h) {
   const hist = new Uint32Array(256); for (let i = 0; i < G.length; i++) hist[G[i]]++;
   let acc = 0, p90 = 255; for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= G.length * 0.9) { p90 = v; break; } }
-  const thr = Math.max(40, p90 * 0.45);
+  const thr = Math.max(40, p90 * 0.62);   // 잉크젯은 검정이 진한 회색으로 나와서 (종이 밝기의 62% 아래면 표식 후보)
   const lab = new Int32Array(w * h).fill(-1), comps = [], q = new Int32Array(w * h);
   for (let s = 0; s < w * h; s++) {
     if (G[s] >= thr || lab[s] >= 0) continue;
