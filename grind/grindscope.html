@@ -177,6 +177,7 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
         <li><b>그림자 없이</b> · 폰이나 손 그림자가 지지 않게, 천장 등 바로 아래는 피하고 창가처럼 옆에서 오는 밝은 빛이 좋아요. <b>플래시는 꺼요</b> (반사돼요).</li>
         <li><b>초점</b> · 화면에서 가루를 눌러 초점을 맞추고, 흔들리지 않게 찍어요.</li>
         <li><b>가루는 얇게</b> · 서로 겹치거나 뭉치지 않게 펼쳐요. 한 숟가락도 안 되는 적은 양이면 충분해요.</li>
+        <li><b>3장 찍어 합치기</b> · 같은 가루를 다시 섞어 펼치고 세 번 찍어 같은 그라인더·분쇄도로 저장하면, 세 번째 저장 때 <b>합치기</b>를 물어봐요. 입자 수가 세 배라 한 장보다 결과가 훨씬 안정돼요. (기록 탭에서 2~3개를 골라 직접 합칠 수도 있어요)</li>
         <li class="tip-coaster"><b>DiFluid 코스터 전체가</b> 화면에 들어오되, 화면을 꽉 채울수록 정확해요.</li>
         <li class="tip-sheet"><b>네 귀퉁이 표식이 모두</b> 들어오게, 카드나 동전도 자리에 올려 함께 찍어요. 종이가 휘지 않게 평평한 곳에 두세요.</li>
         <li><b>원본으로</b> · 메신저로 보낸 사진은 압축돼서 작은 입자가 사라져요.</li>
@@ -1925,8 +1926,20 @@ async function saveRecord() {
   if (!memoryOnly) { try { await DB.put(rec); } catch (e) { memoryOnly = true; toast('이 브라우저는 저장소를 못 써요. 내보내기를 꼭 해주세요'); } }
   refreshRecords();
   toast('기록에 저장했어요');
+  suggestMerge(rec);
 }
 
+async function suggestMerge(rec) {
+  if (!rec.grinder || !rec.setting) return;
+  const sib = S.records.filter(r => !r.merged && r.grinder === rec.grinder && r.setting === rec.setting && rec.ts - r.ts < 3600e3 && r.ts <= rec.ts)
+    .filter(r => !S.records.some(m => m.merged && (m.mergedFrom || []).includes(r.id))).sort((a, b) => b.ts - a.ts).slice(0, 3);
+  if (sib.length === 2) { setTimeout(() => toast('같은 분쇄도로 2장째예요 · 한 장 더 찍으면 합칠 수 있어요'), 1600); return; }
+  if (sib.length < 3) return;
+  const ok = await askModal({ title: '3장 합치기', ok: '합치기', message: `${rec.grinder} ${rec.setting}로 방금 3장을 저장했어요. 하나로 합치면 입자 수가 세 배라 결과가 더 정확해요. 합칠까요? (원본 3장도 그대로 남아요)` });
+  if (!ok) return;
+  S.sel.clear(); sib.forEach(r => S.sel.add(r.id));
+  $('#btnMerge').onclick();
+}
 function refreshRecords() {
   S.records.sort((a, b) => b.ts - a.ts);
   $('#recCount').textContent = S.records.length ? `(${S.records.length})` : '';
@@ -2004,7 +2017,8 @@ $('#btnMerge').onclick = async () => {
     id: uid(), ts: Date.now(), grinder: v[0].trim(), burr: v[1].trim(), setting: v[2].trim(), beans: v[3].trim(), note: v[4].trim(),
     coasterMm: recs[0].coasterMm, umPerPx: +(recs.reduce((a, r) => a + (r.umPerPx || 0), 0) / recs.length).toFixed(2),
     T: recs[0].T, split: recs[0].split, nTotal: recs.reduce((a, r) => a + (r.nTotal || 0), 0), nExcl: recs.reduce((a, r) => a + (r.nExcl || 0), 0),
-    d, thumb: recs[0].thumb, merged: parts.length, parts,
+    d, thumb: recs[0].thumb, merged: parts.length, parts, mergedFrom: recs.map(r => r.id),
+    beanId: same('beanId') ? (recs[0].beanId || '') : '', method: same('method') ? recs[0].method : undefined,
   };
   S.records.unshift(rec);
   if (!memoryOnly) { try { await DB.put(rec); } catch (e) { toast('저장소를 못 써요. 내보내기를 꼭 해주세요'); } }
@@ -2021,9 +2035,15 @@ $('#btnDel').onclick = async () => {
   refreshRecords();
 };
 
+function mergedNote(r) {                        // 합친 기록: 장별 D50 차이로 얼마나 고른지
+  const ds = (r.parts || []).map(p => p.d50).filter(v => isFinite(v)), n = (r.d || []).length;
+  if (ds.length < 2) return `${r.merged}장을 합친 기록이에요 (입자 ${n}개). ▲는 D50 위치예요.`;
+  const lo = Math.min(...ds), hi = Math.max(...ds), mid = (lo + hi) / 2, sp = (hi - lo) / 2 / mid * 100;
+  return `${r.merged}장을 합친 기록이에요 (입자 ${n}개). 장별 D50 ${fmt(lo)}~${fmt(hi)}µm, 차이 ±${sp.toFixed(1)}%${sp > 8 ? ' · 장마다 차이가 커요. 가루를 더 고르게 섞어 다시 찍어 보세요' : ' · 고르게 나왔어요'}. ▲는 D50 위치예요.`;
+}
 function cmpSeries() {
   const recs = S.records.filter(r => S.sel.has(r.id)).sort((a, b) => a.ts - b.ts).slice(0, 8);
-  return recs.map((r, i) => ({ d: r.d, label: metaLabel(r) || fmtDate(r.ts), color: PALETTE[i % PALETTE.length], rec: r }));
+  return recs.map((r, i) => ({ d: r.d, label: (metaLabel(r) || fmtDate(r.ts)) + (r.merged ? ` 🔗${r.merged}장` : ''), color: PALETTE[i % PALETTE.length], rec: r }));
 }
 // 비교 탭 그래프 설정: 기록이 1개이거나 표에서 하나를 누르면 그 기록만 막대 그래프로
 function cmpCfg(ser) {
@@ -2041,7 +2061,7 @@ function renderCompare() {
   }
   const cfg = cmpCfg(ser);
   note.textContent = (S.sel.size > 8 ? '최대 8개까지 겹쳐 그려요. ' : '') +
-    (cfg.focus ? (ser.length > 1 ? `'${cfg.focus.label}'만 보는 중이에요. 같은 줄을 다시 누르면 겹친 곡선으로 돌아가요.` : '기록 1개라서 분포 그래프로 보여줘요. ▲는 D50 위치예요.')
+    (cfg.focus ? (ser.length > 1 ? `'${cfg.focus.label}'만 보는 중이에요. 같은 줄을 다시 누르면 겹친 곡선으로 돌아가요.` : (cfg.focus.rec.merged ? mergedNote(cfg.focus.rec) : '기록 1개라서 분포 그래프로 보여줘요. ▲는 D50 위치예요.'))
       : '곡선은 보기 쉽도록 3구간 평활화했어요. ▲는 D50 위치예요. 표에서 한 줄을 누르면 그 기록만 볼 수 있어요.');
   drawChart($('#chartCmp'), cfg);
   const fu = finesUm();
