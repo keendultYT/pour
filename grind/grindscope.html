@@ -3121,14 +3121,17 @@ function applyPro(on, user) {
   $$('#segMode button').forEach(x => x.setAttribute('aria-pressed', x.dataset.m === S.mode));
   $$('#segCmpMode button').forEach(x => x.setAttribute('aria-pressed', x.dataset.m === S.cmpMode));
   if (!user) return;
-  lsSet('gs_pro', on ? '1' : '0');
+  if (user !== 'sync') lsSet('gs_pro', on ? '1' : '0');
   const T0 = $('#rT').value, S0 = $('#rS').value; presetSliders();
   if (S.res) { if (T0 !== $('#rT').value || S0 !== $('#rS').value) reAnalyze(); else updateResults(); }
   renderRecords(); renderGuide();
   if (!$('#tab-compare').classList.contains('hidden')) { renderCompare(); if (on) renderMap(); }
-  toast(on ? '상급 모드: 세부 설정·지도·차이 열이 보여요' : '기본 모드로 돌아왔어요');
+  if (user !== 'sync') toast(on ? '상급 모드: 세부 설정·지도·차이 열이 보여요 (레시피북도 같이)' : '기본 모드로 돌아왔어요 (레시피북도 같이)');
 }
 $('#proTog').onchange = () => applyPro($('#proTog').checked, true);
+// 레시피북과 같은 토글: 다른 쪽에서 바꾸고 돌아오면 맞춤
+window.addEventListener('storage', e => { if (e.key === 'gs_pro' && (e.newValue === '1') !== isPro()) applyPro(e.newValue === '1', 'sync'); });
+window.addEventListener('pageshow', () => { const on = lsGet('gs_pro', '0') === '1'; if (on !== isPro()) applyPro(on, 'sync'); });
 function renderGuide() {
   const g = $('#guide'); if (!g) return;
   const cal = !!sheetCal(), s1 = cal || lsGet('gs_sheet_printed', '') === '1', s3 = S.records.some(r => r.method === 'sheet');
