@@ -19,17 +19,17 @@
   /* Pour 공통 색 (통합 2단계): 폰 설정이 밝으면 밝게, 어두우면 Pour Guide와 같은 어두운 색 */
   --bg:#f4f5f7; --panel:#ffffff; --ink:#101418; --mute:#5d6875; --line:#dde1e7;
   --accent:#0f766e; --accent-ink:#ffffff; --good:#047857; --warn:#b45309; --bad:#dc2626;
-  --grid:#e6e9ee; --chartbg:#ffffff;
+  --grid:#e6e9ee; --chartbg:#ffffff; --raise:#e4e7ec;
   --radius:14px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){ --bg:#0b0d10; --panel:#14181d; --ink:#eef1f5; --mute:#a3adbb; --line:#222831;
-    --accent:#2dd4bf; --accent-ink:#062520; --good:#34d399; --warn:#fbbf24; --bad:#f87171; --grid:#1d232b; --chartbg:#14181d; }
+    --accent:#2dd4bf; --accent-ink:#062520; --good:#34d399; --warn:#fbbf24; --bad:#f87171; --grid:#1d232b; --chartbg:#14181d; --raise:#232b35; }
   /* 삼성 인터넷 '어둡게 보기'가 회색 글씨를 어둡게 덧칠하는 문제: 흰색+투명도로 (Pour Guide와 같은 대책) */
   html.ssd:not([data-theme="light"]){ --ink:#fff; --mute:rgba(255,255,255,.64); }
 }
 :root[data-theme="dark"]{ --bg:#0b0d10; --panel:#14181d; --ink:#eef1f5; --mute:#a3adbb; --line:#222831;
-  --accent:#2dd4bf; --accent-ink:#062520; --good:#34d399; --warn:#fbbf24; --bad:#f87171; --grid:#1d232b; --chartbg:#14181d; }
+  --accent:#2dd4bf; --accent-ink:#062520; --good:#34d399; --warn:#fbbf24; --bad:#f87171; --grid:#1d232b; --chartbg:#14181d; --raise:#232b35; }
 /* 삼성 인터넷 '어둡게 보기'·크롬 자동 다크가 색을 덧칠하지 않게 (레시피북과 같은 방식): 페이지는 only light, 어두운 색은 직접 칠함 */
 :root{color-scheme:only light}
 input,select,textarea{color-scheme:light}
@@ -43,7 +43,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:va
 /* Pour 책갈피 탭 (레시피북 ↔ 입자 분석). 앱 설치 버튼은 Pour 앱 안이라 숨김 */
 header:has(.booktabs){align-items:flex-end;padding-top:16px;padding-bottom:0}
 header .booktabs{display:flex;align-items:flex-end;gap:4px;margin-bottom:-1px}
-header .booktabs a{padding:9px 16px 8px;border:1px solid var(--line);border-bottom-color:transparent;border-radius:12px 12px 0 0;background:var(--panel);color:var(--mute);font-size:15px;font-weight:700;text-decoration:none;white-space:nowrap}
+header .booktabs a{padding:9px 16px 8px;border:1px solid var(--line);border-bottom-color:transparent;border-radius:12px 12px 0 0;background:var(--raise);color:var(--mute);font-size:15px;font-weight:700;text-decoration:none;white-space:nowrap}
 header .booktabs a.on{background:var(--bg);color:var(--ink);font-size:18px;padding-top:10px}
 header:has(.booktabs) > span{align-self:center}
 header .install{display:none!important}
