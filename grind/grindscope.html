@@ -228,7 +228,9 @@ td.dpos{color:var(--bad)} td.dneg{color:var(--accent)}
 .savebar[hidden]{display:none}
 .savebar .btn{width:100%;max-width:520px}
 /* 위쪽·아래 탭바 (2.38, 레시피북과 같은 모양). 글자는 줄바꿈 없이 */
-header.ttlh{border-bottom:0;align-items:center;gap:8px;padding-top:14px;padding-bottom:4px;min-width:0}
+header.ttlh{border-bottom:0;align-items:center;gap:8px;padding-top:20px;padding-bottom:8px;min-width:0}
+.tsw{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:8px;align-self:stretch;margin:-6px 0;padding:6px 0;color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.tsw:active .swc{transform:scale(.96)}
 header.ttlh h1.gtt{margin:0;font-size:clamp(22px,7.4vw,29px);font-weight:900;letter-spacing:-.045em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
 .swc{flex:none;display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 11px;border-radius:99px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
 .swc em{font-style:normal}
@@ -239,14 +241,14 @@ html.pro .probtn em{filter:none;opacity:1}
 @media (max-width:370px){.swc span{display:none}.swc{padding:0 9px}}
 .segwrap{position:fixed;left:0;right:0;bottom:0;z-index:30;max-width:none;padding:0;pointer-events:none}
 nav.tabs{pointer-events:auto;max-width:440px;margin:0 auto;display:flex;align-items:flex-end;gap:0;border-radius:0;padding:8px 8px calc(10px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--panel) 95%,transparent);border-top:1px solid var(--line);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-nav.tabs button{flex:1;min-width:0;height:auto;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;border-radius:0;background:none;color:var(--mute);font:inherit;font-size:10.5px;font-weight:700;position:relative;padding:0;white-space:nowrap;cursor:pointer}
+nav.tabs button{flex:1;min-width:0;height:38px;line-height:1.2;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;border-radius:0;background:none;color:var(--mute);font:inherit;font-size:10.5px;font-weight:700;position:relative;padding:0;white-space:nowrap;cursor:pointer}
 nav.tabs button em{font-style:normal;font-size:19px;line-height:1;filter:grayscale(1);opacity:.6}
 nav.tabs button[aria-selected="true"]{background:none;color:var(--ink)}
 nav.tabs button[data-tab][aria-selected="true"] em{filter:none;opacity:1}
 nav.tabs button[data-tab][aria-selected="true"]::before{content:"";position:absolute;top:-8px;width:22px;height:3px;border-radius:0 0 3px 3px;background:var(--accent)}
 nav.tabs sup{position:absolute;top:-5px;left:calc(50% + 7px);min-width:16px;padding:0 4px;border-radius:99px;background:var(--raise);color:var(--ink);font-size:9px;line-height:15px;text-align:center}
 nav.tabs sup:empty{display:none}
-nav.tabs .mid{flex:0 0 68px}
+nav.tabs .mid{flex:0 0 68px;height:38px}
 nav.tabs .mid b{width:52px;height:52px;margin-top:-28px;border-radius:17px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:24px;box-shadow:0 8px 18px rgba(0,0,0,.3),0 0 0 5px var(--bg)}
 body{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
 .savebar{bottom:calc(68px + env(safe-area-inset-bottom))}
@@ -307,7 +309,7 @@ html.pro[data-pt="s1"] .protog{border-color:transparent;background:linear-gradie
 </style>
 </head>
 <body>
-<header class="ttlh"><h1 class="gtt">입자 분석</h1><a class="swc" href="../"><em>📖</em><span>레시피북</span> ⇄</a><button class="probtn" id="proTog" type="button" aria-pressed="false" title="전문가 모드 · 레시피북과 같이 바뀌어요"><em>⚡</em>전문가</button><button class="install hidden" id="btnInstall" type="button">＋ 앱 설치</button></header>
+<header class="ttlh"><a class="tsw" href="../" aria-label="레시피북으로"><h1 class="gtt">입자 분석</h1><span class="swc"><em>📖</em><span>레시피북</span> ⇄</span></a><button class="probtn" id="proTog" type="button" aria-pressed="false" title="전문가 모드 · 레시피북과 같이 바뀌어요"><em>⚡</em>전문가</button><button class="install hidden" id="btnInstall" type="button">＋ 앱 설치</button></header>
 <div class="segwrap"><nav class="tabs"><button data-tab="analyze" aria-selected="true"><em>🔬</em>분석</button><button data-tab="records" aria-selected="false"><em>🗂️</em>기록<sup id="recCount"></sup></button><button class="mid" id="tbCam" type="button" aria-label="촬영"><b>📷</b></button><button data-tab="compare" aria-selected="false"><em>📊</em>비교</button><button id="tbSheet" type="button"><em>🖨️</em>시트</button></nav></div>
 <div class="status" id="status">⏳ 앱 준비 중…</div>
 <main>
