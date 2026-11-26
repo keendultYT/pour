@@ -131,6 +131,12 @@ summary{cursor:pointer;color:var(--mute);font-size:13px}
 .rec .meta b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rec .meta small{color:var(--mute)}
 .rec.child{margin-left:22px;opacity:.85;border-style:dashed}
+.mtag{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:6px;margin-right:5px;vertical-align:1px}
+.mtag.sheet{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.mtag.coaster{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.calline{margin:-2px 0 10px;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--good) 10%,transparent);font-size:12.5px;line-height:1.55;color:var(--ink)}
+.calline.todo{background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.calline button{margin-left:4px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:2px 9px;font:inherit;font-size:11.5px}
 .rec .kids{margin-top:4px;border:1px solid var(--line);background:var(--bg);color:var(--accent);border-radius:999px;padding:3px 10px;font:inherit;font-size:12px;font-weight:600}
 .rec .childnote{color:var(--mute);font-size:11px}
 .rec input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}
@@ -168,6 +174,7 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
   <div class="panel">
     <h2>1. 사진</h2>
     <div class="srcmode"><div class="seg" id="srcMode" role="group" aria-label="측정 방법"><button type="button" data-src="sheet">인쇄 시트</button><button type="button" data-src="coaster">DiFluid 코스터</button></div><button type="button" class="btn" id="btnSheet" hidden>🖨 시트 PDF 받기</button></div>
+    <div class="calline" id="calLine" hidden></div>
     <div class="btns">
       <label class="btn primary filebtn">📷 촬영<input id="fileCamera" type="file" accept="image/*" capture="environment"></label>
       <label class="btn filebtn">🖼 사진 선택<input id="filePick" type="file" accept="image/*"></label>
@@ -183,7 +190,7 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
         <li><b>3장 찍어 합치기</b> · 같은 가루를 다시 섞어 펼치고 세 번 찍어 같은 그라인더·분쇄도로 저장하면, 세 번째 저장 때 <b>합치기</b>를 물어봐요. 입자 수가 세 배라 한 장보다 결과가 훨씬 안정돼요. (기록 탭에서 2~3개를 골라 직접 합칠 수도 있어요)</li>
         <li class="tip-coaster"><b>DiFluid 코스터 전체가</b> 화면에 들어오되, 화면을 꽉 채울수록 정확해요.</li>
         <li class="tip-sheet"><b>네 귀퉁이 표식이 모두</b> 들어오게 찍어요. 종이가 휘지 않게 평평한 곳에 두세요.</li>
-        <li class="tip-sheet"><b>카드를 꼭 올려요</b> · 교통카드·멤버십 카드(번호 없는 뒷면)를 카드 자리에 올리면 인쇄 크기를 정확히 재서 보정해요. <b>동전은 보조</b>예요 · 두께와 반사 때문에 덜 정확해서 카드가 없을 때만 써요.</li>
+        <li class="tip-sheet"><b>처음 한 번은 카드와 함께 시트 전체</b> · 교통카드·멤버십 카드(번호 없는 뒷면)를 카드 자리에 올려 찍으면 인쇄 크기를 등록해요. <b>그다음부턴 카드 없이 네모만 가까이</b> 찍어요 (네 귀퉁이 표식은 꼭 들어오게). 가까이 찍을수록 작은 입자까지 정확해요. 다른 종이·프린터로 다시 인쇄했으면 다시 등록해요. <b>동전은 보조</b>예요 · 카드보다 덜 정확해요.</li>
         <li><b>원본으로</b> · 메신저로 보낸 사진은 압축돼서 작은 입자가 사라져요.</li>
       </ol>
     </details>
@@ -1979,7 +1986,7 @@ function renderRecords() {
     return `<div class="rec${child ? ' child' : ''}" data-id="${r.id}">
       <input type="checkbox" ${S.sel.has(r.id) ? 'checked' : ''} aria-label="선택">
       <img src="${r.thumb || ''}" alt="">
-      <div class="meta"><b>${esc(metaLabel(r) || '(이름 없음)')}</b>
+      <div class="meta"><b><span class="mtag ${r.method === 'sheet' ? 'sheet' : 'coaster'}">${r.method === 'sheet' ? '시트' : '코스터'}</span>${esc(metaLabel(r) || '(이름 없음)')}</b>
         <small>${esc(r.beans || '')}${r.beans ? ' · ' : ''}${fmtDate(r.ts)}</small><br>
         <small>D50 <b style="display:inline">${fmt(st.d50)}</b>µm · span ${fmt(st.span, 2)} · ${st.n}개</small>${r.merged ? `<br><small>🔗 ${r.merged}장 합침 · 장별 D50 ${fmt(Math.min(...r.parts.map(p => p.d50)))}–${fmt(Math.max(...r.parts.map(p => p.d50)))} · D10 ${fmt(Math.min(...r.parts.map(p => p.d10)))}–${fmt(Math.max(...r.parts.map(p => p.d10)))}µm</small>` : ''}
         ${bw.length ? `<br><small class="pbw">☕ 이 분쇄로 내린 추출 ${bw.length}번 · 최근 ${esc(bw[0].name)} ${fmtT(bw[0].t)}${bw[0].endMin != null ? (bw[0].t < bw[0].endMin - 10 ? ' (빨리 끝남)' : bw[0].t > bw[0].endMax + 10 ? ' (늦게 끝남)' : ' (목표 안)') : ''}</small>` : ''}
@@ -2042,7 +2049,7 @@ $('#btnMerge').onclick = async () => {
     coasterMm: recs[0].coasterMm, umPerPx: +(recs.reduce((a, r) => a + (r.umPerPx || 0), 0) / recs.length).toFixed(2),
     T: recs[0].T, split: recs[0].split, nTotal: recs.reduce((a, r) => a + (r.nTotal || 0), 0), nExcl: recs.reduce((a, r) => a + (r.nExcl || 0), 0),
     d, thumb: recs[0].thumb, merged: parts.length, parts, mergedFrom: recs.map(r => r.id),
-    beanId: same('beanId') ? (recs[0].beanId || '') : '', method: same('method') ? recs[0].method : undefined,
+    beanId: same('beanId') ? (recs[0].beanId || '') : '', method: same('method') ? recs[0].method : undefined, ...(same('method') && recs[0].method === 'sheet' ? { printScale: +(recs.reduce((a, r) => a + (r.printScale || 1), 0) / recs.length).toFixed(4) } : {}),
   };
   S.records.unshift(rec);
   if (!memoryOnly) { try { await DB.put(rec); } catch (e) { toast('저장소를 못 써요. 내보내기를 꼭 해주세요'); } }
@@ -2109,11 +2116,11 @@ $('#btnExpCsv').onclick = () => {
   const recs = S.sel.size ? S.records.filter(r => S.sel.has(r.id)) : S.records;
   if (!recs.length) { toast('내보낼 기록이 없어요'); return; }
   const fu = finesUm();
-  const head = ['날짜', '그라인더', '버', '분쇄도', '원두', '메모', '입자수', 'D10(µm)', 'D50(µm)', 'D90(µm)', '평균(µm,개수)', 'span', `미분<${fu}µm(부피%)`, 'D10면적', 'D50면적', 'D90면적', '코스터mm', 'µm/픽셀'];
+  const head = ['날짜', '그라인더', '버', '분쇄도', '원두', '메모', '입자수', 'D10(µm)', 'D50(µm)', 'D90(µm)', '평균(µm,개수)', 'span', `미분<${fu}µm(부피%)`, 'D10면적', 'D50면적', 'D90면적', '측정 방식', '코스터mm', '인쇄 배율', 'µm/픽셀'];
   const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
   const rows = recs.map(r => {
     const st = Core.stats(r.d, fu), sa = Core.stats(r.d, fu, 'area');
-    return [fmtDate(r.ts), r.grinder, r.burr, r.setting, r.beans, r.note, st.n, fmt(st.d10, 1), fmt(st.d50, 1), fmt(st.d90, 1), fmt(st.mean, 1), fmt(st.span, 3), fmt(st.finesVol, 2), fmt(sa.d10, 1), fmt(sa.d50, 1), fmt(sa.d90, 1), r.coasterMm, r.umPerPx].map(q).join(',');
+    return [fmtDate(r.ts), r.grinder, r.burr, r.setting, r.beans, r.note, st.n, fmt(st.d10, 1), fmt(st.d50, 1), fmt(st.d90, 1), fmt(st.mean, 1), fmt(st.span, 3), fmt(st.finesVol, 2), fmt(sa.d10, 1), fmt(sa.d50, 1), fmt(sa.d90, 1), r.method === 'sheet' ? '인쇄 시트' : 'DiFluid 코스터', r.method === 'sheet' ? '' : r.coasterMm, r.method === 'sheet' && r.printScale ? r.printScale : '', r.umPerPx].map(q).join(',');
   });
   downloadBlob(new Blob(['﻿' + [head.map(q).join(','), ...rows].join('\n')], { type: 'text/csv' }), 'grindscope-summary.csv');
 };
@@ -2649,12 +2656,20 @@ async function loadSheet(full, W, H, file, down) {
   rctx.putImageData(out, 0, 0);
   // 인쇄 배율 (카드 · 동전)
   const sc = mk.oriented ? sheetScale(fctx, W, H, Hm) : { s: null, how: [] };
-  let scale = 1;
-  if (sc.s && sc.s > 0.85 && sc.s < 1.15) {
-    scale = sc.s; const pct = (sc.s - 1) * 100;
-    if (Math.abs(pct) > 1) warn.push(`인쇄 크기가 실제보다 ${Math.abs(pct).toFixed(1)}% ${pct < 0 ? '작게' : '크게'} 나왔어요 (${sc.how.join('·')} 기준). 이번 결과는 보정했지만, ‘실제 크기(100%)’로 다시 인쇄하면 더 정확해요.`);
-    if (sc.coinOnly) warn.push('동전으로만 인쇄 크기를 쟀어요. 동전은 두께와 반사 때문에 카드보다 덜 정확해요. 카드를 같이 올리면 더 정확해요.');
-  } else warn.push('카드나 동전이 안 보여서 인쇄 크기를 확인하지 못했어요. 100%로 인쇄했다고 보고 계산했어요.');
+  let scale = 1, scaleSrc = '';
+  const cal = sheetCal(), pctTxt = v => `${(v * 100).toFixed(1)}%`;
+  if (sc.s && sc.s > 0.85 && sc.s < 1.15 && !sc.coinOnly) {           // 카드로 잼 → 이 시트 인쇄 크기로 등록(갱신)
+    scale = sc.s; scaleSrc = '카드';
+    const changed = !cal || Math.abs(cal.scale / sc.s - 1) > 0.005;
+    setSheetCal({ scale: sc.s, ts: Date.now() });
+    if (changed) toast(`이 시트의 인쇄 크기(${pctTxt(sc.s)})를 등록했어요 · 다음부턴 카드 없이 네모만 가까이 찍어요`);
+  } else if (cal) {                                                      // 등록해 둔 인쇄 크기
+    scale = cal.scale; scaleSrc = '등록값';
+  } else if (sc.s && sc.s > 0.85 && sc.s < 1.15) {                      // 등록 전 · 동전만
+    scale = sc.s; scaleSrc = sc.how.join('·');
+    warn.push('동전으로만 인쇄 크기를 쟀어요. 동전은 두께와 반사 때문에 덜 정확해요. 카드를 카드 자리에 올리고 시트 전체를 한 번 찍어 인쇄 크기를 등록해 주세요.');
+  } else warn.push('인쇄 크기가 등록돼 있지 않아요. 카드를 카드 자리에 올리고 시트 전체를 한 번 찍어 등록해 주세요. 등록 전에는 100%로 보고 계산해서 크기가 부정확할 수 있어요.');
+  renderCalLine();
   const um = 1000 * scale / k;
   if (um > 110) warn.push(`해상도가 낮아요 (1픽셀 ≈ ${um.toFixed(0)}µm). 시트를 화면에 꽉 차게, 원본 해상도로 찍어 주세요.`);
   else if (um > 60) warn.push(`1픽셀 ≈ ${um.toFixed(0)}µm 라서 약 ${(um * 2.5).toFixed(0)}µm 아래 입자는 측정이 어려워요.`);
@@ -2663,7 +2678,7 @@ async function loadSheet(full, W, H, file, down) {
   Object.assign(S, {
     full: rc, W: N, H: N, rx0: 0, ry0: 0, rw: N, rh: N, B, c0: { cx: c, cy: c, r: 50 * k },
     edgeCache: null, overrides: [], res: null, bg: null, fileName: file.name || '', downscaled: down, circularity: 1,
-    sheet: { k, scale, how: sc.how, ests: sc.ests, warn },
+    sheet: { k, scale, how: scaleSrc === '등록값' ? ['등록값'] : sc.how, ests: sc.ests, warn, src: scaleSrc },
   });
   S.geo = { edge: { ok: true }, ring: { ok: true }, usedRing: false, mmPerPx: scale / k, coaster: { cx: c, cy: c, r: 50 * k }, analysis: { cx: c, cy: c, r: SHEET.rIn * k } };
   S.bg = Core.buildBackground(S.B, N, N, S.geo.analysis);
@@ -2674,7 +2689,7 @@ async function loadSheet(full, W, H, file, down) {
   prefillMeta(); showGeoWarn(warn);
   await computeAnalysis();
   spin(false);
-  setStatus(`✓ 분석 완료: ${S.lastStats && S.lastStats.n || 0}개 입자 (인쇄 시트${sc.how.length ? ' · ' + sc.how.join('·') + ' 확인' : ''})`, 'ok');
+  setStatus(`✓ 분석 완료: ${S.lastStats && S.lastStats.n || 0}개 입자 (인쇄 시트 · ${scaleSrc === '카드' ? `카드로 인쇄 크기 ${pctTxt(scale)} 등록` : scaleSrc === '등록값' ? `등록한 인쇄 크기 ${pctTxt(scale)}` : scaleSrc ? scaleSrc + ' 기준' : '인쇄 크기 미등록'})`, scaleSrc ? 'ok' : undefined);
   $('#panelWork').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 /* 페이지 mm 영역을 res px/mm로 펴서 밝기·채도 읽기 */
@@ -2751,14 +2766,26 @@ function sheetScale(fctx, W, H, Hm) {
   return { s: ests.length ? ests.reduce((a, b) => a + b, 0) / ests.length : null, how, ests, coinOnly: !how.includes('카드') && ests.length > 0 };
 }
 
+/* 인쇄 크기 등록 (시트마다 처음 한 번 카드로) */
+function sheetCal() { try { const o = JSON.parse(localStorage.getItem('gs_sheet_cal') || 'null'); return o && o.scale > 0.85 && o.scale < 1.15 ? o : null; } catch (e) { return null; } }
+function setSheetCal(o) { try { if (o) localStorage.setItem('gs_sheet_cal', JSON.stringify(o)); else localStorage.removeItem('gs_sheet_cal'); } catch (e) { } }
+function renderCalLine() {
+  const el = $('#calLine'); if (!el) return;
+  const c = sheetCal();
+  el.innerHTML = c
+    ? `✓ 인쇄 크기 등록됨 <b>${(c.scale * 100).toFixed(1)}%</b> (${new Date(c.ts).getMonth() + 1}/${new Date(c.ts).getDate()}) · 이제 카드 없이 <b>네 귀퉁이 표식과 네모만 화면에 꽉 차게</b> 찍어요 <button type="button" id="calReset">다시 등록</button>`
+    : `<b>① 처음 한 번</b>: 카드를 카드 자리에 올리고 <b>시트 전체</b>를 찍어 인쇄 크기를 등록해요. 그다음부턴 네모만 가까이 찍으면 돼요.`;
+  el.classList.toggle('todo', !c);
+  if ($('#calReset')) $('#calReset').onclick = () => { setSheetCal(null); renderCalLine(); toast('등록을 지웠어요 · 카드를 올리고 시트 전체를 찍어 다시 등록해 주세요'); };
+}
 /* 측정 방법: 코스터 / 인쇄 시트 (기억) */
 function srcMode() { try { return localStorage.getItem('gs_src2') === 'coaster' ? 'coaster' : 'sheet'; } catch (e) { return 'sheet'; } }   // 기본은 인쇄 시트
 function setSrcMode(m) {
   try { localStorage.setItem('gs_src2', m); } catch (e) { }
   for (const b of $$('#srcMode button')) b.setAttribute('aria-pressed', b.dataset.src === m);
-  $('#btnSheet').hidden = m !== 'sheet';
+  $('#btnSheet').hidden = m !== 'sheet'; $('#calLine').hidden = m !== 'sheet'; renderCalLine();
   $('#srcHint').textContent = m === 'sheet'
-    ? '네 귀퉁이 표식이 모두 나오게, 카드를 카드 자리에 올리고 위에서 수직으로 찍어 주세요.'
+    ? (sheetCal() ? '네 귀퉁이 표식과 네모가 화면에 꽉 차게, 위에서 수직으로 찍어 주세요.' : '카드를 카드 자리에 올리고 시트 전체를 위에서 수직으로 찍어 주세요.')
     : 'DiFluid 코스터 원 전체가 나오게, 위에서 수직으로 찍어 주세요.';
   $('#tips').dataset.mode = m;
 }
