@@ -130,6 +130,9 @@ summary{cursor:pointer;color:var(--mute);font-size:13px}
 .rec .meta{flex:1;min-width:0}
 .rec .meta b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rec .meta small{color:var(--mute)}
+.rec.child{margin-left:22px;opacity:.85;border-style:dashed}
+.rec .kids{margin-top:4px;border:1px solid var(--line);background:var(--bg);color:var(--accent);border-radius:999px;padding:3px 10px;font:inherit;font-size:12px;font-weight:600}
+.rec .childnote{color:var(--mute);font-size:11px}
 .rec input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}
 table.cmp{width:100%;border-collapse:collapse;font-size:13px}
 table.cmp th,table.cmp td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
@@ -1926,8 +1929,15 @@ async function saveRecord() {
   S.records.unshift(rec);
   if (!memoryOnly) { try { await DB.put(rec); } catch (e) { memoryOnly = true; toast('이 브라우저는 저장소를 못 써요. 내보내기를 꼭 해주세요'); } }
   refreshRecords();
-  toast('기록에 저장했어요');
+  resetWork();
+  toast('기록에 저장했어요 · 다음 사진을 올려 주세요');
   suggestMerge(rec);
+}
+function resetWork() {                           // 저장 뒤: 사진·결과를 비우고 처음 화면으로
+  Object.assign(S, { full: null, B: null, res: null, geo: null, bg: null, ov: null, ovCtx: null, ovData: null, lastD: null, lastStats: null, sheet: null, overrides: [] });
+  for (const id of ['#panelWork', '#panelResult', '#panelSave']) $(id).classList.add('hidden');
+  showGeoWarn([]); setStatus('✓ 저장했어요 · 같은 가루를 다시 섞어 다음 장을 찍어 주세요 (3장을 모으면 합칠 수 있어요)', 'ok');
+  $('#tab-analyze').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 async function suggestMerge(rec) {
@@ -1943,7 +1953,8 @@ async function suggestMerge(rec) {
 }
 function refreshRecords() {
   S.records.sort((a, b) => b.ts - a.ts);
-  $('#recCount').textContent = S.records.length ? `(${S.records.length})` : '';
+  const hid = new Set(S.records.flatMap(m => m.mergedFrom || [])), nVis = S.records.filter(r => !hid.has(r.id)).length;
+  $('#recCount').textContent = nVis ? `(${nVis})` : '';
   const grinders = Array.from(new Set(S.records.map(r => r.grinder).filter(Boolean)));
   const f = $('#fGrinder'), cur = f.value;
   f.innerHTML = '<option value="">전체</option>' + grinders.map(g => `<option>${esc(g)}</option>`).join('');
@@ -1954,19 +1965,25 @@ function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ 
 
 function renderRecords() {
   const filt = $('#fGrinder').value;
-  const list = S.records.filter(r => !filt || r.grinder === filt);
+  const parentOf = new Map(); S.records.forEach(m => (m.mergedFrom || []).forEach(id => parentOf.set(id, m.id)));
+  S.openMerged = S.openMerged || new Set();
+  const top = S.records.filter(r => (!filt || r.grinder === filt) && !parentOf.has(r.id));   // 합친 원본은 합친 기록 밑으로
+  const list = [];
+  top.forEach(r => { list.push(r); if (r.merged && S.openMerged.has(r.id)) (r.mergedFrom || []).forEach(id => { const c = S.records.find(x => x.id === id); if (c) list.push(c); }); });
   const box = $('#recList');
   if (!list.length) { box.innerHTML = '<div class="empty">아직 기록이 없어요. 분석 탭에서 사진을 분석하고 저장해보세요.</div>'; return; }
   const brews = pourBrews();
   box.innerHTML = list.map(r => {
     const st = Core.stats(r.d, finesUm()), bw = brewsFor(brews, r);
-    return `<div class="rec" data-id="${r.id}">
+    const child = parentOf.has(r.id), hasKids = r.merged && (r.mergedFrom || []).some(id => S.records.some(x => x.id === id));
+    return `<div class="rec${child ? ' child' : ''}" data-id="${r.id}">
       <input type="checkbox" ${S.sel.has(r.id) ? 'checked' : ''} aria-label="선택">
       <img src="${r.thumb || ''}" alt="">
       <div class="meta"><b>${esc(metaLabel(r) || '(이름 없음)')}</b>
         <small>${esc(r.beans || '')}${r.beans ? ' · ' : ''}${fmtDate(r.ts)}</small><br>
         <small>D50 <b style="display:inline">${fmt(st.d50)}</b>µm · span ${fmt(st.span, 2)} · ${st.n}개</small>${r.merged ? `<br><small>🔗 ${r.merged}장 합침 · 장별 D50 ${fmt(Math.min(...r.parts.map(p => p.d50)))}–${fmt(Math.max(...r.parts.map(p => p.d50)))} · D10 ${fmt(Math.min(...r.parts.map(p => p.d10)))}–${fmt(Math.max(...r.parts.map(p => p.d10)))}µm</small>` : ''}
-        ${bw.length ? `<br><small class="pbw">☕ 이 분쇄로 내린 추출 ${bw.length}번 · 최근 ${esc(bw[0].name)} ${fmtT(bw[0].t)}${bw[0].endMin != null ? (bw[0].t < bw[0].endMin - 10 ? ' (빨리 끝남)' : bw[0].t > bw[0].endMax + 10 ? ' (늦게 끝남)' : ' (목표 안)') : ''}</small>` : ''}</div>
+        ${bw.length ? `<br><small class="pbw">☕ 이 분쇄로 내린 추출 ${bw.length}번 · 최근 ${esc(bw[0].name)} ${fmtT(bw[0].t)}${bw[0].endMin != null ? (bw[0].t < bw[0].endMin - 10 ? ' (빨리 끝남)' : bw[0].t > bw[0].endMax + 10 ? ' (늦게 끝남)' : ' (목표 안)') : ''}</small>` : ''}
+        ${hasKids ? `<br><button type="button" class="kids" data-kids="${r.id}">${S.openMerged.has(r.id) ? '원본 접기 ▴' : `원본 ${r.merged}장 보기 ▾`}</button>` : ''}${child ? '<br><small class="childnote">합친 기록의 원본</small>' : ''}</div>
       <button class="btn" data-edit="1" title="편집">✎</button>
     </div>`;
   }).join('');
@@ -1974,6 +1991,12 @@ function renderRecords() {
 $('#recList').addEventListener('change', e => {
   const row = e.target.closest('.rec'); if (!row) return;
   if (e.target.checked) S.sel.add(row.dataset.id); else S.sel.delete(row.dataset.id);
+});
+$('#recList').addEventListener('click', e => {
+  const k = e.target.closest('[data-kids]'); if (!k) return;
+  e.stopPropagation(); S.openMerged = S.openMerged || new Set();
+  if (S.openMerged.has(k.dataset.kids)) S.openMerged.delete(k.dataset.kids); else S.openMerged.add(k.dataset.kids);
+  renderRecords();
 });
 $('#recList').addEventListener('click', async e => {
   const b = e.target.closest('button[data-edit]'); if (!b) return;
@@ -2026,6 +2049,7 @@ $('#btnMerge').onclick = async () => {
   S.sel.clear(); S.sel.add(rec.id);
   refreshRecords();
   toast(`${recs.length}장을 합친 기록을 만들었어요`);
+  setStatus(`✓ ${recs.length}장을 합쳤어요 · 원본은 합친 기록 밑에 접혀 있어요`, 'ok');
 };
 $('#btnDel').onclick = async () => {
   if (!S.sel.size) { toast('삭제할 기록을 선택해주세요'); return; }
