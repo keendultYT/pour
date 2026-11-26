@@ -164,12 +164,12 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
 <section id="tab-analyze">
   <div class="panel">
     <h2>1. 사진</h2>
-    <div class="srcmode"><div class="seg" id="srcMode" role="group" aria-label="측정 방법"><button type="button" data-src="coaster">코스터</button><button type="button" data-src="sheet">인쇄 시트</button></div><button type="button" class="btn" id="btnSheet" hidden>🖨 시트 인쇄 · PDF</button></div>
+    <div class="srcmode"><div class="seg" id="srcMode" role="group" aria-label="측정 방법"><button type="button" data-src="sheet">인쇄 시트</button><button type="button" data-src="coaster">DiFluid 코스터</button></div><button type="button" class="btn" id="btnSheet" hidden>🖨 시트 PDF 받기</button></div>
     <div class="btns">
       <label class="btn primary filebtn">📷 촬영<input id="fileCamera" type="file" accept="image/*" capture="environment"></label>
       <label class="btn filebtn">🖼 사진 선택<input id="filePick" type="file" accept="image/*"></label>
     </div>
-    <div class="hint" id="srcHint" style="margin-top:8px">코스터 원 전체가 나오게, 위에서 수직으로, 그림자 없이. 원본 해상도 그대로 올려주세요(메신저로 보내면 압축돼요).</div>
+    <div class="hint" id="srcHint" style="margin-top:8px">인쇄 시트 네 귀퉁이 표식이 모두 나오게, 위에서 수직으로 찍어 주세요.</div>
     <details class="tips" id="tips"><summary>📸 정확하게 찍는 법</summary>
       <ol>
         <li><b>위에서 수직으로</b> · 폰을 종이와 평행하게 들어요. 기울면 가까운 쪽 가루가 크게 찍혀요.</li>
@@ -177,7 +177,7 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
         <li><b>그림자 없이</b> · 폰이나 손 그림자가 지지 않게, 천장 등 바로 아래는 피하고 창가처럼 옆에서 오는 밝은 빛이 좋아요. <b>플래시는 꺼요</b> (반사돼요).</li>
         <li><b>초점</b> · 화면에서 가루를 눌러 초점을 맞추고, 흔들리지 않게 찍어요.</li>
         <li><b>가루는 얇게</b> · 서로 겹치거나 뭉치지 않게 펼쳐요. 한 숟가락도 안 되는 적은 양이면 충분해요.</li>
-        <li class="tip-coaster"><b>코스터 전체가</b> 화면에 들어오되, 화면을 꽉 채울수록 정확해요.</li>
+        <li class="tip-coaster"><b>DiFluid 코스터 전체가</b> 화면에 들어오되, 화면을 꽉 채울수록 정확해요.</li>
         <li class="tip-sheet"><b>네 귀퉁이 표식이 모두</b> 들어오게, 카드나 동전도 자리에 올려 함께 찍어요. 종이가 휘지 않게 평평한 곳에 두세요.</li>
         <li><b>원본으로</b> · 메신저로 보낸 사진은 압축돼서 작은 입자가 사라져요.</li>
       </ol>
@@ -2451,16 +2451,33 @@ function sheetSvg() {
 <text x="105" y="16" font-size="2.8" text-anchor="middle" fill="#444">${SHEET.ver} · 반드시 실제 크기(100%)로 인쇄</text>${t}
 <text x="105" y="290" font-size="2.2" text-anchor="middle" fill="#888">keendultyt.github.io/pour · ${SHEET.ver}</text></svg>`;
 }
-function printSheet() {
-  const w = window.open('', '_blank');
-  if (!w) { toast('새 창이 막혔어요. 팝업을 허용해 주세요'); return; }
-  w.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pour 입자 분석 시트</title>
-<style>@page{size:A4;margin:0}html,body{margin:0;background:#fff;color:#111;font-family:sans-serif}svg{display:block;width:210mm;height:297mm}
-.bar{position:sticky;top:0;background:#111;color:#fff;padding:12px 16px;font-size:14px;line-height:1.5}.bar b{color:#5eead4}.bar button{margin-top:8px;height:40px;padding:0 16px;border:0;border-radius:10px;background:#2dd4bf;color:#062520;font-weight:700;font-size:15px}
-@media print{.bar{display:none}}@media screen{svg{width:100%;height:auto;max-width:210mm}}</style></head><body>
-<div class="bar">인쇄 설정에서 <b>배율: 실제 크기(100%)</b>, 용지: <b>A4</b>로 골라 주세요. PDF로 저장해 두고 나중에 인쇄해도 돼요.<br><button onclick="print()">인쇄 · PDF 저장</button></div>
-${sheetSvg()}</body></html>`);
-  w.document.close();
+/* 시트를 A4 PDF 파일로 (300dpi 이미지 한 장). 새 창·인쇄 창이 막히는 폰·설치 앱에서도 파일로 받을 수 있게 */
+async function sheetPdfBlob() {
+  const im = new Image(); im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(sheetSvg()); await im.decode();
+  const W = 2480, H = 3508, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.drawImage(im, 0, 0, W, H);
+  const jpg = new Uint8Array(await (await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92))).arrayBuffer());
+  const enc = new TextEncoder(), parts = [], offs = []; let len = 0;
+  const add = x => { const b = typeof x === 'string' ? enc.encode(x) : x; parts.push(b); len += b.length; };
+  const obj = (n, body) => { offs[n] = len; add(`${n} 0 obj\n`); body(); add('\nendobj\n'); };
+  const draw = 'q 595.28 0 0 841.89 0 0 cm /Im0 Do Q';
+  add('%PDF-1.4\n%\xC0\xC1\n');
+  obj(1, () => add('<< /Type /Catalog /Pages 2 0 R >>'));
+  obj(2, () => add('<< /Type /Pages /Kids [3 0 R] /Count 1 >>'));
+  obj(3, () => add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>'));
+  obj(4, () => { add(`<< /Type /XObject /Subtype /Image /Width ${W} /Height ${H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`); add(jpg); add('\nendstream'); });
+  obj(5, () => add(`<< /Length ${draw.length} >>\nstream\n${draw}\nendstream`));
+  const xref = len;
+  add(`xref\n0 6\n0000000000 65535 f \n${[1, 2, 3, 4, 5].map(n => String(offs[n]).padStart(10, '0') + ' 00000 n \n').join('')}trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+  return new Blob(parts, { type: 'application/pdf' });
+}
+async function printSheet() {
+  const b = $('#btnSheet'); b.disabled = true; spin(true, '시트 PDF 만드는 중…');
+  try {
+    await downloadBlob(await sheetPdfBlob(), 'pour-grind-sheet-A4.pdf', 'share');
+    await askModal({ title: '인쇄 시트 PDF', ok: '확인', message: 'PDF를 열어 인쇄할 때 배율을 꼭 ‘실제 크기(100%)’로, 용지는 A4로 골라 주세요. ‘페이지에 맞춤’으로 인쇄하면 크기가 줄어요. 인쇄한 뒤 눈금을 자로 재서 100mm인지 확인하면 좋아요.' });
+  } catch (e) { toast('PDF를 만들지 못했어요: ' + (e && e.message || e)); }
+  finally { spin(false); b.disabled = false; }
 }
 
 /* 4점 호모그래피: 페이지 mm (x,y) → 사진 픽셀 (u,v) */
@@ -2652,14 +2669,14 @@ function sheetScale(fctx, W, H, Hm) {
 }
 
 /* 측정 방법: 코스터 / 인쇄 시트 (기억) */
-function srcMode() { try { return localStorage.getItem('gs_src') === 'sheet' ? 'sheet' : 'coaster'; } catch (e) { return 'coaster'; } }
+function srcMode() { try { return localStorage.getItem('gs_src2') === 'coaster' ? 'coaster' : 'sheet'; } catch (e) { return 'sheet'; } }   // 기본은 인쇄 시트
 function setSrcMode(m) {
-  try { localStorage.setItem('gs_src', m); } catch (e) { }
+  try { localStorage.setItem('gs_src2', m); } catch (e) { }
   for (const b of $$('#srcMode button')) b.setAttribute('aria-pressed', b.dataset.src === m);
   $('#btnSheet').hidden = m !== 'sheet';
   $('#srcHint').textContent = m === 'sheet'
     ? '인쇄 시트 네 귀퉁이 표식이 모두 나오게, 위에서 수직으로 찍어 주세요.'
-    : '코스터 원 전체가 나오게, 위에서 수직으로 찍어 주세요.';
+    : 'DiFluid 코스터 원 전체가 나오게, 위에서 수직으로 찍어 주세요.';
   $('#tips').dataset.mode = m;
 }
 for (const b of $$('#srcMode button')) b.onclick = () => setSrcMode(b.dataset.src);
