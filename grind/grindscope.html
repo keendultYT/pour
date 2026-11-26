@@ -69,7 +69,6 @@ header .install{margin-left:auto;align-self:center;border:1px solid var(--accent
 @media (max-width:480px){header:has(.install:not(.hidden)) > span,header:has(.booktabs) > span{display:none}}
 /* PC·태블릿: 탭을 위쪽 제목 줄로 */
 @media (min-width:768px){
-  body{padding-bottom:32px}
   header{padding-left:max(16px,calc((100vw - 980px) / 2 + 16px));padding-right:max(16px,calc((100vw - 980px) / 2 + 16px))}
   header{align-items:center}
   header nav.tabs{position:static;margin-left:auto;background:none;border:0;padding:0;gap:4px;z-index:auto}
@@ -78,7 +77,6 @@ header .install{margin-left:auto;align-self:center;border:1px solid var(--accent
   header nav.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
   header nav.tabs button[aria-selected="true"] span{color:inherit}
   header .install{margin-left:8px}
-  .toast{bottom:32px}
 }
 main{max-width:980px;margin:0 auto;padding:14px max(16px,env(safe-area-inset-right,0px)) 14px max(16px,env(safe-area-inset-left,0px))}
 /* 분석/기록/비교: 레시피북의 레시피/기록/커뮤니티와 같은 모양으로 위쪽에 */
@@ -229,6 +227,31 @@ td.dpos{color:var(--bad)} td.dneg{color:var(--accent)}
 .savebar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:center;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:color-mix(in srgb,var(--panel) 94%,transparent);border-top:1px solid var(--line);backdrop-filter:blur(6px)}
 .savebar[hidden]{display:none}
 .savebar .btn{width:100%;max-width:520px}
+/* 위쪽·아래 탭바 (2.38, 레시피북과 같은 모양). 글자는 줄바꿈 없이 */
+header.ttlh{border-bottom:0;align-items:center;gap:8px;padding-top:14px;padding-bottom:4px;min-width:0}
+header.ttlh h1.gtt{margin:0;font-size:clamp(22px,7.4vw,29px);font-weight:900;letter-spacing:-.045em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+.swc{flex:none;display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 11px;border-radius:99px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
+.swc em{font-style:normal}
+.probtn{flex:none;margin-left:auto;display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 11px;border-radius:10px;border:1.5px solid var(--mute);background:transparent;color:var(--ink);font:inherit;font-size:12px;font-weight:800;white-space:nowrap;cursor:pointer}
+.probtn em{font-style:normal;filter:grayscale(1);opacity:.7}
+html.pro .probtn{border-color:var(--warn);color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
+html.pro .probtn em{filter:none;opacity:1}
+@media (max-width:370px){.swc span{display:none}.swc{padding:0 9px}}
+.segwrap{position:fixed;left:0;right:0;bottom:0;z-index:30;max-width:none;padding:0;pointer-events:none}
+nav.tabs{pointer-events:auto;max-width:440px;margin:0 auto;display:flex;align-items:flex-end;gap:0;border-radius:0;padding:8px 8px calc(10px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--panel) 95%,transparent);border-top:1px solid var(--line);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+nav.tabs button{flex:1;min-width:0;height:auto;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;border-radius:0;background:none;color:var(--mute);font:inherit;font-size:10.5px;font-weight:700;position:relative;padding:0;white-space:nowrap;cursor:pointer}
+nav.tabs button em{font-style:normal;font-size:19px;line-height:1;filter:grayscale(1);opacity:.6}
+nav.tabs button[aria-selected="true"]{background:none;color:var(--ink)}
+nav.tabs button[data-tab][aria-selected="true"] em{filter:none;opacity:1}
+nav.tabs button[data-tab][aria-selected="true"]::before{content:"";position:absolute;top:-8px;width:22px;height:3px;border-radius:0 0 3px 3px;background:var(--accent)}
+nav.tabs sup{position:absolute;top:-5px;left:calc(50% + 7px);min-width:16px;padding:0 4px;border-radius:99px;background:var(--raise);color:var(--ink);font-size:9px;line-height:15px;text-align:center}
+nav.tabs sup:empty{display:none}
+nav.tabs .mid{flex:0 0 68px}
+nav.tabs .mid b{width:52px;height:52px;margin-top:-28px;border-radius:17px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:24px;box-shadow:0 8px 18px rgba(0,0,0,.3),0 0 0 5px var(--bg)}
+body{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+.savebar{bottom:calc(68px + env(safe-area-inset-bottom))}
+.toast{bottom:calc(110px + env(safe-area-inset-bottom))}
+#status{padding-top:0}
 html[data-pt="0"]{--pt-bg:#0b0d10;--pt-card:#14181d;--pt-well:#0f1318;--pt-raise:#1d232b;--pt-chip:#232b35;--pt-l1:#222831;--pt-l2:#2a323d;--pt-l3:#3b4656;--pt-txt:#eef1f5;--pt-t1:#e5e7eb;--pt-t2:#cbd5e1;--pt-sub:#a3adbb;--pt-acc:#2dd4bf;--pt-accline:#2f6b55;--pt-btn:#2563eb;--pt-btnink:#ffffff;--pt-bkr:#34d399;--pt-bkg:#60a5fa;--pt-togon:#fbbf24}
 html[data-pt="5"]{--pt-bg:#0b0b0b;--pt-card:#141414;--pt-well:#101010;--pt-raise:#1e1e1e;--pt-chip:#232323;--pt-l1:#242424;--pt-l2:#2a2a2a;--pt-l3:#3a3a3a;--pt-txt:#f5f5f5;--pt-t1:#ececec;--pt-t2:#cfcfcf;--pt-sub:#a0a0a0;--pt-acc:#4aa3ff;--pt-accline:#3a3a3a;--pt-btn:#303030;--pt-btnink:#f5f5f5;--pt-bkr:#f5f5f5;--pt-bkg:#f5f5f5;--pt-togon:#f5f5f5}
 html[data-pt="6"]{--pt-bg:#1b1621;--pt-card:#251f2d;--pt-well:#201a27;--pt-raise:#2e2738;--pt-chip:#342c3f;--pt-l1:#2d2637;--pt-l2:#3a3146;--pt-l3:#4f4462;--pt-txt:#efeef3;--pt-t1:#e5e3ec;--pt-t2:#cbc6d8;--pt-sub:#aaa3bc;--pt-acc:#b9b0e2;--pt-accline:#594d7c;--pt-btn:#7b6cb8;--pt-btnink:#ffffff;--pt-bkr:#cdb47c;--pt-bkg:#b9b0e2;--pt-togon:#cdb47c}
@@ -284,8 +307,8 @@ html.pro[data-pt="s1"] .protog{border-color:transparent;background:linear-gradie
 </style>
 </head>
 <body>
-<header><nav class="booktabs"><a class="bk-r" href="../">레시피북</a><a class="on bk-g" aria-current="page">입자 분석</a></nav><h1 class="sr">GrindScope</h1><span>코스터 위 가루 사진 → 입자 크기·분포</span><label class="protog" title="전문가 모드: 세부 설정·지도·차이 열 · 레시피북과 같이 바뀌어요">전문가 모드<input type="checkbox" id="proTog" aria-label="전문가 모드"></label><button class="install hidden" id="btnInstall" type="button">＋ 앱 설치</button></header>
-<div class="segwrap"><nav class="tabs"><button data-tab="analyze" aria-selected="true">분석</button><button data-tab="records" aria-selected="false">기록 <span id="recCount"></span></button><button data-tab="compare" aria-selected="false">비교</button></nav></div>
+<header class="ttlh"><h1 class="gtt">입자 분석</h1><a class="swc" href="../"><em>📖</em><span>레시피북</span> ⇄</a><button class="probtn" id="proTog" type="button" aria-pressed="false" title="전문가 모드 · 레시피북과 같이 바뀌어요"><em>⚡</em>전문가</button><button class="install hidden" id="btnInstall" type="button">＋ 앱 설치</button></header>
+<div class="segwrap"><nav class="tabs"><button data-tab="analyze" aria-selected="true"><em>🔬</em>분석</button><button data-tab="records" aria-selected="false"><em>🗂️</em>기록<sup id="recCount"></sup></button><button class="mid" id="tbCam" type="button" aria-label="촬영"><b>📷</b></button><button data-tab="compare" aria-selected="false"><em>📊</em>비교</button><button id="tbSheet" type="button"><em>🖨️</em>시트</button></nav></div>
 <div class="status" id="status">⏳ 앱 준비 중…</div>
 <main>
 
@@ -2157,7 +2180,7 @@ async function suggestMerge(rec) {
 function refreshRecords() {
   S.records.sort((a, b) => b.ts - a.ts);
   const hid = new Set(S.records.flatMap(m => m.mergedFrom || [])), nVis = S.records.filter(r => !hid.has(r.id)).length;
-  $('#recCount').textContent = nVis ? `(${nVis})` : '';
+  $('#recCount').textContent = nVis ? String(nVis) : '';
   const grinders = Array.from(new Set(S.records.map(r => r.grinder).filter(Boolean)));
   const f = $('#fGrinder'), cur = f.value;
   f.innerHTML = '<option value="">모든 그라인더</option>' + grinders.map(g => `<option>${esc(g)}</option>`).join('');
@@ -3169,7 +3192,7 @@ function presetSliders() {
 }
 function applyPro(on, user) {
   document.documentElement.classList.toggle('pro', on);
-  $('#proTog').checked = on;
+  $('#proTog').setAttribute('aria-pressed', on);
   S.mode = on ? lsGet('gs_mode', 'vol') : 'vol'; S.cmpMode = on ? lsGet('gs_cmpmode', 'vol') : 'vol';
   $('#finesUm').value = on ? (+lsGet('gs_fines', '250') || 250) : 250;
   $$('#segMode button').forEach(x => x.setAttribute('aria-pressed', x.dataset.m === S.mode));
@@ -3182,7 +3205,7 @@ function applyPro(on, user) {
   if (!$('#tab-compare').classList.contains('hidden')) { renderCompare(); if (on) renderMap(); }
   if (user !== 'sync') toast(on ? '전문가 모드 켬: 세부 설정·지도·차이 열이 보여요 (레시피북도 같이)' : '전문가 모드 끔: 쉬운 화면으로 돌아왔어요 (레시피북도 같이)');
 }
-$('#proTog').onchange = () => applyPro($('#proTog').checked, true);
+$('#proTog').onclick = () => applyPro(!isPro(), true);
 // 레시피북과 같은 토글: 다른 쪽에서 바꾸고 돌아오면 맞춤
 window.addEventListener('storage', e => { if (e.key === 'gs_pro' && (e.newValue === '1') !== isPro()) applyPro(e.newValue === '1', 'sync'); });
 window.addEventListener('pageshow', () => { const on = lsGet('gs_pro', '0') === '1'; if (on !== isPro()) applyPro(on, 'sync'); const t = lsGet('pour_theme', ''); if (t && t !== document.documentElement.dataset.pt) { document.documentElement.dataset.pt = t; drawSingle(); } });
@@ -3206,7 +3229,9 @@ function switchTab(name) {
   if (name === 'analyze') { resizeView(); if (S.full) { draw(); } drawSingle(); }
   window.scrollTo(0, 0);
 }
-for (const b of $$('nav.tabs button')) b.onclick = () => switchTab(b.dataset.tab);
+for (const b of $$('nav.tabs button[data-tab]')) b.onclick = () => switchTab(b.dataset.tab);
+$('#tbCam').onclick = () => { switchTab('analyze'); $('#fileCamera').click(); };
+$('#tbSheet').onclick = () => { lsSet('gs_sheet_printed', '1'); renderGuide(); printSheet(); };
 
 window.addEventListener('resize', debounce(() => {
   resizeView(); if (S.full) { fitView(); draw(); }
