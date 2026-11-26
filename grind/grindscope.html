@@ -34,12 +34,20 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-sy
 body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
 header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:baseline;gap:10px}
-header .toPour{align-self:center;flex:none;color:var(--accent);text-decoration:none;font-size:13px;font-weight:600;border:1px solid var(--line);border-radius:999px;padding:4px 10px;margin-right:2px}
+#recList .pbw{color:var(--accent)}
+/* Pour 책갈피 탭 (레시피북 ↔ 입자 분석). 앱 설치 버튼은 Pour 앱 안이라 숨김 */
+header:has(.booktabs){align-items:flex-end;padding-top:16px;padding-bottom:0}
+header .booktabs{display:flex;align-items:flex-end;gap:4px;margin-bottom:-1px}
+header .booktabs a{padding:9px 16px 8px;border:1px solid var(--line);border-bottom-color:transparent;border-radius:12px 12px 0 0;background:var(--panel);color:var(--mute);font-size:15px;font-weight:700;text-decoration:none;white-space:nowrap}
+header .booktabs a.on{background:var(--bg);color:var(--ink);font-size:18px;padding-top:10px}
+header:has(.booktabs) > span{align-self:center}
+header .install{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:-.01em}
 header > span{color:var(--mute);font-size:12px}
 header .install{margin-left:auto;align-self:center;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:5px 12px;font:inherit;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer}
 .modal .box ol{margin:4px 0 8px;padding-left:20px;line-height:1.7}
-@media (max-width:480px){header:has(.install:not(.hidden)) > span{display:none}}
+@media (max-width:480px){header:has(.install:not(.hidden)) > span,header:has(.booktabs) > span{display:none}}
 /* PC·태블릿: 탭을 위쪽 제목 줄로 */
 @media (min-width:768px){
   body{padding-bottom:32px}
@@ -128,7 +136,7 @@ table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);fon
 </style>
 </head>
 <body>
-<header><a class="toPour" href="../" aria-label="푸어 가이드로">‹ 푸어</a><h1>GrindScope</h1><span>코스터 위 가루 사진 → 입자 크기·분포</span><nav class="tabs"><button data-tab="analyze" aria-selected="true">분석</button><button data-tab="records" aria-selected="false">기록 <span id="recCount"></span></button><button data-tab="compare" aria-selected="false">비교</button></nav><button class="install hidden" id="btnInstall" type="button">＋ 앱 설치</button></header>
+<header><nav class="booktabs"><a href="../">레시피북</a><a class="on" aria-current="page">입자 분석</a></nav><h1 class="sr">GrindScope</h1><span>코스터 위 가루 사진 → 입자 크기·분포</span><nav class="tabs"><button data-tab="analyze" aria-selected="true">분석</button><button data-tab="records" aria-selected="false">기록 <span id="recCount"></span></button><button data-tab="compare" aria-selected="false">비교</button></nav><button class="install hidden" id="btnInstall" type="button">＋ 앱 설치</button></header>
 <div class="status" id="status">⏳ 앱 준비 중…</div>
 <main>
 
@@ -1097,6 +1105,13 @@ function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTi
 function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function fmtDate(ts) { const d = new Date(ts); return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+/* 레시피북(Pour Guide) 추출 기록 읽기: 같은 주소의 localStorage 'pourGuide.v1'. 통합 3단계 */
+function pourBrews() { try { const o = JSON.parse(localStorage.getItem('pourGuide.v1') || '{}'); return Array.isArray(o.history) ? o.history : []; } catch (e) { return []; } }
+function brewsFor(list, r) {
+  const g = String(r.grinder || '').trim().toLowerCase(), s = parseFloat(r.setting);
+  return list.filter(h => h.grindId === r.id || (g && String(h.grinder || '').trim().toLowerCase() === g && isFinite(s) && parseFloat(h.setting) === s));
+}
+function fmtT(t) { t = Math.max(0, t || 0); return Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0'); }
 function finesUm() { return Math.max(10, +$('#finesUm').value || 250); }
 
 /* ---------- IndexedDB ---------- */
@@ -1833,14 +1848,16 @@ function renderRecords() {
   const list = S.records.filter(r => !filt || r.grinder === filt);
   const box = $('#recList');
   if (!list.length) { box.innerHTML = '<div class="empty">아직 기록이 없어요. 분석 탭에서 사진을 분석하고 저장해보세요.</div>'; return; }
+  const brews = pourBrews();
   box.innerHTML = list.map(r => {
-    const st = Core.stats(r.d, finesUm());
+    const st = Core.stats(r.d, finesUm()), bw = brewsFor(brews, r);
     return `<div class="rec" data-id="${r.id}">
       <input type="checkbox" ${S.sel.has(r.id) ? 'checked' : ''} aria-label="선택">
       <img src="${r.thumb || ''}" alt="">
       <div class="meta"><b>${esc(metaLabel(r) || '(이름 없음)')}</b>
         <small>${esc(r.beans || '')}${r.beans ? ' · ' : ''}${fmtDate(r.ts)}</small><br>
-        <small>D50 <b style="display:inline">${fmt(st.d50)}</b>µm · span ${fmt(st.span, 2)} · ${st.n}개</small>${r.merged ? `<br><small>🔗 ${r.merged}장 합침 · 장별 D50 ${fmt(Math.min(...r.parts.map(p => p.d50)))}–${fmt(Math.max(...r.parts.map(p => p.d50)))} · D10 ${fmt(Math.min(...r.parts.map(p => p.d10)))}–${fmt(Math.max(...r.parts.map(p => p.d10)))}µm</small>` : ''}</div>
+        <small>D50 <b style="display:inline">${fmt(st.d50)}</b>µm · span ${fmt(st.span, 2)} · ${st.n}개</small>${r.merged ? `<br><small>🔗 ${r.merged}장 합침 · 장별 D50 ${fmt(Math.min(...r.parts.map(p => p.d50)))}–${fmt(Math.max(...r.parts.map(p => p.d50)))} · D10 ${fmt(Math.min(...r.parts.map(p => p.d10)))}–${fmt(Math.max(...r.parts.map(p => p.d10)))}µm</small>` : ''}
+        ${bw.length ? `<br><small class="pbw">☕ 이 분쇄로 내린 추출 ${bw.length}번 · 최근 ${esc(bw[0].name)} ${fmtT(bw[0].t)}${bw[0].endMin != null ? (bw[0].t < bw[0].endMin - 10 ? ' (빨리 끝남)' : bw[0].t > bw[0].endMax + 10 ? ' (늦게 끝남)' : ' (목표 안)') : ''}</small>` : ''}</div>
       <button class="btn" data-edit="1" title="편집">✎</button>
     </div>`;
   }).join('');
