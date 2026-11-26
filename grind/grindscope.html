@@ -132,7 +132,7 @@ summary{cursor:pointer;color:var(--mute);font-size:13px}
 .rec .meta b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rec .meta small{color:var(--mute)}
 .rec.child{margin-left:22px;opacity:.85;border-style:dashed}
-table.cmp small.burr{display:block;font-size:.8em;color:var(--mute);margin:1px 0 0 16px;max-width:11em;overflow:hidden;text-overflow:ellipsis}
+table.cmp small.burr{color:var(--mute)}
 .rectool{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .rectool select{flex:1 1 140px;width:auto;min-width:0;padding:7px 10px;font-size:13px}
 .seg.acts button{color:var(--ink);border-left:1px solid var(--line)}
@@ -148,9 +148,23 @@ table.cmp small.burr{display:block;font-size:.8em;color:var(--mute);margin:1px 0
 .rec .kids{margin-top:4px;border:1px solid var(--line);background:var(--bg);color:var(--accent);border-radius:999px;padding:3px 10px;font:inherit;font-size:12px;font-weight:600}
 .rec .childnote{color:var(--mute);font-size:11px}
 .rec input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}
-table.cmp{width:100%;border-collapse:collapse;font-size:13px}
-table.cmp th,table.cmp td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
-table.cmp th:first-child,table.cmp td:first-child{text-align:left}
+table.cmp{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed;margin-top:4px}
+table.cmp th,table.cmp td{padding:5px 2px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+table.cmp th{font-size:11px;color:var(--mute);font-weight:600;border-bottom:1px solid var(--line)}
+table.cmp th small{font-size:9px;margin-left:1px}
+table.cmp tr.nm td{text-align:left;padding:9px 2px 0}
+table.cmp tr.nm .lb{font-weight:700}
+table.cmp tr.nm .burr{display:inline;margin-left:6px;font-size:11px}
+table.cmp tr.nm .ex{float:right;font-size:11px;color:var(--mute)}
+table.cmp tr.nv td{border-bottom:1px solid var(--line);padding-bottom:8px}
+#zoomOv{position:fixed;inset:0;z-index:90;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;overflow:hidden;background:var(--bg);padding:env(safe-area-inset-top,0px) 8px env(safe-area-inset-bottom,0px)}
+#zoomOv.on{display:flex}
+#zoomOv p{margin:0;font-size:12px;color:var(--mute);position:absolute;bottom:calc(10px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center}
+.chart-wrap canvas{cursor:zoom-in}
+table.cmp.many{font-size:11.5px}table.cmp.many th,table.cmp.many td{padding-left:1px;padding-right:1px}
+.seg button{white-space:nowrap}
+#zoomOv canvas.rot{transform:rotate(90deg)}
+.cmpunit{margin-top:12px;font-size:11px;color:var(--mute);text-align:right}
 table.cmp tr[data-id]{cursor:pointer}
 table.cmp tr.on td{background:color-mix(in srgb,currentColor 9%,transparent);font-weight:600}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
@@ -495,7 +509,8 @@ html.pro[data-pt="s1"] .protog{border-color:transparent;background:linear-gradie
     <div class="chart-wrap" style="margin-top:10px"><canvas id="chartCmp" height="340"></canvas></div>
     <div class="btns" style="margin-top:8px"><button class="btn" id="btnPngCmp">PNG 저장</button><button class="btn" id="btnPngCmpShare">PNG 공유</button></div>
     <div class="cmpbase pro-only" id="cmpBaseRow">차이 기준 <select id="cmpBase"></select></div>
-    <div style="overflow-x:auto;margin-top:12px"><table class="cmp" id="cmpTable"></table></div>
+    <div class="cmpunit" id="cmpUnit"></div>
+    <table class="cmp" id="cmpTable"></table>
     <div class="hint" style="margin-top:8px" id="cmpNote"></div>
     </div>
   </div>
@@ -2408,15 +2423,43 @@ function renderCompare() {
   $('#cmpBaseRow').hidden = ser.length < 2;
   const base = sts.get(ser.find(s => s.rec.id === S.cmpBase)), dx = ser.length > 1;
   const sg = (v, k = 0) => (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v).toFixed(k);
-  tbl.innerHTML = `<tr><th>기록 (${BLc} 기준)</th><th>입자수</th><th>D10</th><th>D50</th>${dx ? '<th class="pro-only">ΔD50</th>' : ''}<th>D90</th><th class="pro-only">평균</th><th class="pro-only">span</th><th>미분&lt;${fu}µm</th>${dx ? '<th class="pro-only">Δ미분</th>' : ''}</tr>` +
+  // 가로 스크롤 없이: 기록마다 이름 줄 + 숫자 줄 (숫자 칸은 화면 폭에 맞춰 고정 폭)
+  const pro = isPro(), cols = [['D10', st => fmt(st.d10)], ['D50', st => `<b>${fmt(st.d50)}</b>`, 'd50']];
+  if (pro && dx) cols.push(['ΔD50', null, 'dd']);
+  cols.push(['D90', st => fmt(st.d90)]);
+  if (pro) cols.push(['span', st => fmt(st.span, 2)]);
+  cols.push(['미분', st => fmt(st.fines, 1) + '%']);
+  if (pro && dx) cols.push(['Δ미분', null, 'df']);
+  tbl.innerHTML = `<colgroup>${cols.map(() => '<col>').join('')}</colgroup><tr class="hd">${cols.map(c => `<th>${c[0]}</th>`).join('')}</tr>` +
     ser.map(s => {
-      const st = sts.get(s), isB = s.rec.id === S.cmpBase;
+      const st = sts.get(s), isB = s.rec.id === S.cmpBase, on = cfg.focus === s && ser.length > 1 ? ' on' : '';
       const dd = (st.d50 / base.d50 - 1) * 100, df = st.fines - base.fines;
-      const dcell = (v, txt) => `<td class="pro-only ${isB ? '' : v > 0.05 ? 'dpos' : v < -0.05 ? 'dneg' : ''}">${isB ? '기준' : txt}</td>`;
-      return `<tr data-id="${esc(String(s.rec.id))}"${cfg.focus === s && ser.length > 1 ? ' class="on"' : ''}><td><span class="dot" style="background:${s.color}"></span>${esc(s.label)}${s.burr ? `<small class="burr">${esc(s.burr)}</small>` : ''}</td><td>${st.n}</td><td>${fmt(st.d10)}</td><td><b>${fmt(st.d50)}</b></td>${dx ? dcell(dd, sg(dd, 1) + '%') : ''}<td>${fmt(st.d90)}</td><td class="pro-only">${fmt(st.mean)}</td><td class="pro-only">${fmt(st.span, 2)}</td><td>${fmt(st.fines, 1)}%</td>${dx ? dcell(df, sg(df, 1) + '%p') : ''}</tr>`;
+      const dcell = (v, txt) => `<td class="${isB ? '' : v > 0.05 ? 'dpos' : v < -0.05 ? 'dneg' : ''}">${isB ? '기준' : txt}</td>`, pc = v => sg(v, Math.abs(v) >= 10 ? 0 : 1);
+      return `<tr class="nm${on}" data-id="${esc(String(s.rec.id))}"><td colspan="${cols.length}"><span class="dot" style="background:${s.color}"></span><b class="lb">${esc(s.label)}</b>${s.burr ? `<small class="burr">${esc(s.burr)}</small>` : ''}<span class="ex">입자 ${st.n}${pro ? ` · 평균 ${fmt(st.mean)}` : ''}</span></td></tr>` +
+        `<tr class="nv${on}" data-id="${esc(String(s.rec.id))}">${cols.map(c => c[2] === 'dd' ? dcell(dd, pc(dd) + '%') : c[2] === 'df' ? dcell(df, sg(df, 1)) : `<td>${c[1](st)}</td>`).join('')}</tr>`;
     }).join('');
+  $('#cmpUnit').textContent = `${BLc} 기준 · µm · 미분은 ${fu}µm보다 작은 가루${pro && dx ? ' · Δ미분은 %p' : ''}`;
+  tbl.classList.toggle('many', cols.length > 5);
 }
 
+/* 그래프 크게 보기: 누르면 화면 가득, 아무 데나 누르면 닫힘 */
+function zoomChart(kind) {
+  let cfg = null;
+  if (kind === 'single') { if (!S.lastD || !S.lastD.length) return; cfg = singleCfg(); }
+  else if (kind === 'cmp') { const ser = cmpSeries(); if (!ser.length) return; cfg = cmpCfg(ser); }
+  else if (kind === 'map') { if (!S.mapLast || !S.mapLast.pts.length) return; }
+  let ov = $('#zoomOv');
+  if (!ov) { ov = document.createElement('div'); ov.id = 'zoomOv'; ov.innerHTML = '<canvas></canvas><p>아무 데나 누르면 닫혀요</p>'; document.body.appendChild(ov); ov.onclick = () => { ov.classList.remove('on'); }; }
+  ov.classList.add('on');
+  const cv = ov.querySelector('canvas'), rot = innerHeight > innerWidth * 1.2;   // 세로로 든 폰: 그래프를 옆으로 눕혀 긴 쪽을 씀
+  const w = rot ? innerHeight - 56 : Math.min(innerWidth - 16, 1100), h = rot ? innerWidth - 24 : Math.min(innerHeight - 70, Math.max(320, w * .7));
+  cv.classList.toggle('rot', rot); cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  if (kind === 'map') drawMap(cv, S.mapLast.pts, S.mapLast.fit, { w, h });
+  else drawChart(cv, cfg, { w, h, font: 13 });
+}
+$('#chartSingle').addEventListener('click', () => zoomChart('single'));
+$('#chartCmp').addEventListener('click', () => zoomChart('cmp'));
+$('#chartMap').addEventListener('click', () => zoomChart('map'));
 $('#cmpBase').onchange = () => { S.cmpBase = $('#cmpBase').value; renderCompare(); };
 
 /* ---------- 그라인더 지도 (상급): 분쇄도별 D50 점 + 추세선 ---------- */
@@ -2454,9 +2497,10 @@ function renderMap() {
       (outs.length ? ` · <b>튀는 기록</b>: ${outs.map(p => `${esc(metaLabel(p.r))} ${fmtDate(p.r.ts).slice(5, 10)} (추세보다 ${p.res > 0 ? '+' : ''}${p.res.toFixed(0)}%)`).join(', ')}` : ' · 튀는 기록 없음') +
       ' · 주황 점은 코스터, 청록 점은 시트, 큰 점은 합친 기록이에요.';
 }
-function drawMap(cv, pts, fit) {
+function drawMap(cv, pts, fit, size) {
+  S.mapLast = { pts, fit };
   const th = { bg: cssVar('--chartbg'), ink: cssVar('--ink'), mute: cssVar('--mute'), grid: cssVar('--grid'), acc: cssVar('--accent'), warn: cssVar('--warn'), bad: cssVar('--bad') };
-  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth || 600, H = 280;
+  const dpr = window.devicePixelRatio || 1, W = size ? size.w : (cv.clientWidth || 600), H = size ? size.h : 280;
   cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
   const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.fillStyle = th.bg; g.fillRect(0, 0, W, H);
