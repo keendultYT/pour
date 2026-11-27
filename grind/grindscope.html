@@ -136,6 +136,10 @@ table.cmp small.burr{color:var(--mute)}
 .mtag.sheet{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
 .mtag.coaster{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
 .calline{margin:-2px 0 10px;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--good) 10%,transparent);font-size:12.5px;line-height:1.55;color:var(--ink)}
+.stp{display:flex;align-items:stretch;gap:4px}
+.stp input{flex:1;min-width:0;text-align:center}
+.stp button{flex:none;width:40px;border:1px solid var(--line);border-radius:10px;background:var(--raise);color:var(--ink);font:inherit;font-size:20px;line-height:1;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.stp button:active{background:var(--line)}
 .caldone{margin:2px 0 12px;padding:18px 16px;border-radius:14px;border:1.5px solid color-mix(in srgb,var(--good) 55%,transparent);background:color-mix(in srgb,var(--good) 8%,var(--panel));text-align:center}
 .caldone.empty{border-color:color-mix(in srgb,var(--warn) 55%,transparent);background:color-mix(in srgb,var(--warn) 8%,var(--panel))}
 .caldone .ck{font-size:13px;font-weight:800;color:var(--good)}.caldone.empty .ck{color:var(--warn)}
@@ -411,7 +415,7 @@ html[data-pt="s1"] .btn.primary{background:linear-gradient(90deg,var(--pt-btn),v
       <div><label>버</label><input type="text" id="mBurr" data-sg="burr" autocomplete="off" placeholder="예: Lebrew 필터 버"></div>
     </div>
     <div class="row" style="margin-top:8px">
-      <div><label>분쇄도</label><input type="text" id="mSetting" data-sg="setting" autocomplete="off" placeholder="예: 12"></div>
+      <div><label>분쇄도</label><div class="stp"><button type="button" data-stp="-1" aria-label="분쇄도 하나 내리기">−</button><input type="text" id="mSetting" inputmode="decimal" autocomplete="off" placeholder="예: 12"><button type="button" data-stp="1" aria-label="분쇄도 하나 올리기">+</button></div></div>
       <div><label>원두</label><select id="mBeans"></select></div>
     </div>
     <div style="margin-top:8px"><label>메모</label><input type="text" id="mNote" placeholder="선택"></div>
@@ -1311,10 +1315,7 @@ function cssVar(n) { return getComputedStyle(document.documentElement).getProper
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function fmtDate(ts) { const d = new Date(ts); return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
 /* 그라인더 목록 (레시피북·입자 분석 공통, 두 파일에 같은 코드). 내 그라인더는 localStorage 'pour.grinders'에 이름으로 저장 */
-const GRINDER_PRESETS = ['코만단테 C40', '1Zpresso K-Ultra', '1Zpresso K-Max', '1Zpresso ZP6 Special', '1Zpresso J-Max', '1Zpresso X-Ultra', '1Zpresso Q2',
-  '타임모어 C3', '타임모어 C2', '타임모어 S3', '타임모어 Sculptor 064', '타임모어 Sculptor 078', '킨그라인더 K6', '킨그라인더 K4',
-  '펠로우 오드 Gen 2', '바라짜 엔코어', '바라짜 버추오소+', '말코닉 EK43', '니치 제로', 'DF64', 'DF83', '라곰 P64', '위필라 유니폼', '예젠 98L',
-  '하리오 스케르톤', '칼리타 넥스트G', '후지로얄 R-220'];
+const GRINDER_PRESETS = [];   // 2.49: 미리 넣은 목록 없음 · 직접 적은 그라인더만 (내 그라인더 pour.grinders)
 const gKey = g => String(g || '').trim().toLowerCase();
 function myGrinders(extra) {
   let reg = []; try { reg = JSON.parse(localStorage.getItem('pour.grinders') || '[]'); } catch (e) { }
@@ -1334,8 +1335,8 @@ function grinderOptions(cur, extra) {
   const opt = g => `<option${gKey(g) === gKey(cur) ? ' selected' : ''}>${e(g)}</option>`;
   return (cur ? '' : '<option value="" selected>그라인더 고르기</option>') +
     (mine.length ? `<optgroup label="내 그라인더">${mine.map(opt).join('')}</optgroup>` : '') +
-    `<optgroup label="${mine.length ? '다른 그라인더' : '목록에서 고르기'}">${rest.map(opt).join('')}</optgroup>` +
-    '<option value="+">+ 목록에 없어요 (직접 입력)</option>';
+    (rest.length ? `<optgroup label="다른 그라인더">${rest.map(opt).join('')}</optgroup>` : '') +
+    '<option value="+">+ 새 그라인더 (이름 적기)</option>';
 }
 /* select에 붙이기: 고르면 내 그라인더에 넣고 onPick(이름). '직접 입력'은 이름을 물어봄 */
 function bindGrinderSelect(sel, extra, onPick) {
@@ -1840,7 +1841,7 @@ function suggValues(key, grinder) {
 }
 function hideSuggest() { if (suggBox) { suggBox.parentNode && suggBox.parentNode.removeChild(suggBox); suggBox = null; } }
 function attachSuggest(inp, key, getGrinder) {
-  if (!inp || inp.dataset.sgOn) return;
+  if (!inp || inp.dataset.sgOn || key === 'setting') return;   // 분쇄도는 그라인더마다 달라 목록 없이 직접 적기 (2.49)
   inp.dataset.sgOn = '1';
   const show = () => {
     hideSuggest();
@@ -1884,6 +1885,20 @@ $('#mGrinder').addEventListener('change', () => {           // 그라인더를 �
   updSaveBar();
 });
 $('#mSetting').addEventListener('input', () => updSaveBar());
+/* 분쇄도 −/+ : 마지막 숫자 묶음만 1씩 (12→13, 1.5.2→1.5.3). 비어 있으면 이 그라인더로 마지막에 쓴 분쇄도부터. 누르고 있으면 빨리 */
+function stepSetting(d) {
+  const inp = $('#mSetting'); let v = inp.value.trim();
+  if (!v) { const g = gKey($('#mGrinder').value), last = S.records.filter(r => gKey(r.grinder) === g && r.setting).sort((a, b) => (b.date || 0) - (a.date || 0))[0]; if (last) { inp.value = String(last.setting); updSaveBar(); return; } v = '0'; }
+  const m = v.match(/^(.*?)(\d+)(\D*)$/); if (!m) return;
+  const n = Math.max(0, +m[2] + d), pad = m[2].length > 1 && m[2][0] === '0' ? m[2].length : 1;
+  inp.value = m[1] + String(n).padStart(pad, '0') + m[3];
+  updSaveBar();
+}
+for (const b of $$('.stp [data-stp]')) {
+  let t1 = 0, t2 = 0; const d = +b.dataset.stp, stop = () => { clearTimeout(t1); clearInterval(t2); };
+  b.addEventListener('pointerdown', e => { e.preventDefault(); stepSetting(d); t1 = setTimeout(() => { t2 = setInterval(() => stepSetting(d), 70); }, 420); });
+  for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, stop);
+}
 $('#mBeans').innerHTML = beanOptions(''); bindBeanSelect($('#mBeans'));
 addEventListener('scroll', e => { if (suggBox && !suggBox.contains(e.target)) suggPlace(); }, true);
 addEventListener('resize', () => suggPlace && suggPlace());
