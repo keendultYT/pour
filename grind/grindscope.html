@@ -491,7 +491,7 @@ html[data-pt="s1"] .btn.primary{background:linear-gradient(90deg,var(--pt-btn),v
     <h2>기록</h2>
     <div class="rectool">
       <select id="fGrinder" aria-label="그라인더 거르기"><option value="">모든 그라인더</option></select>
-      <span class="seg acts"><button type="button" id="btnSelAll">전체 선택</button><button type="button" id="btnMerge">🔗 합치기</button><button type="button" class="go" id="btnToCompare">비교 →</button></span>
+      <span class="seg acts"><button type="button" id="btnSelAll">전체 선택</button><button type="button" id="btnMerge">🔗 합치기</button><button type="button" id="btnFixPx" class="pro-only" title="1픽셀 값 맞추기">📏</button><button type="button" class="go" id="btnToCompare">비교 →</button></span>
     </div>
     <div class="recfilt pro-only">
       <select id="fMethod" aria-label="측정 방식"><option value="">모든 방식</option><option value="sheet">시트</option><option value="coaster">코스터</option></select>
@@ -2301,7 +2301,7 @@ function renderRecords() {
       <img src="${r.thumb || ''}" alt="">
       <div class="meta"><b><span class="mtag ${r.method === 'sheet' ? 'sheet' : 'coaster'}">${r.method === 'sheet' ? '시트' : '코스터'}</span>${esc(metaLabel(r) || '(이름 없음)')}</b>
         <small>${[r.burr, r.beans].filter(Boolean).map(esc).join(' · ')}${r.burr || r.beans ? ' · ' : ''}${fmtDate(r.ts)}</small><br>
-        <small>D50 <b style="display:inline">${fmt(st.d50)}</b>µm · span ${fmt(st.span, 2)} · ${st.n}개${r.umPerPx ? ` · 1픽셀 ${r.umPerPx}µm` : r.merged && r.mergedFrom ? (() => { const u = r.mergedFrom.map(id => (S.records.find(x => x.id === id) || {}).umPerPx).filter(Boolean); return u.length ? ` · 1픽셀 ${u.join('/')}µm` : ''; })() : ''}</small>${r.merged ? `<br><small>🔗 ${r.merged}장 합침 · 장별 D50 ${fmt(Math.min(...r.parts.map(p => p.d50)))}–${fmt(Math.max(...r.parts.map(p => p.d50)))} · D10 ${fmt(Math.min(...r.parts.map(p => p.d10)))}–${fmt(Math.max(...r.parts.map(p => p.d10)))}µm</small>` : ''}
+        <small>D50 <b style="display:inline">${fmt(st.d50)}</b>µm · span ${fmt(st.span, 2)} · ${st.n}개${r.umPerPx ? ` · 1픽셀 ${r.umPerPx}µm${r.rescaled ? ' (고침)' : ''}` : r.merged && r.mergedFrom ? (() => { const u = r.mergedFrom.map(id => (S.records.find(x => x.id === id) || {}).umPerPx).filter(Boolean); return u.length ? ` · 1픽셀 ${u.join('/')}µm` : ''; })() : ''}</small>${r.merged ? `<br><small>🔗 ${r.merged}장 합침 · 장별 D50 ${fmt(Math.min(...r.parts.map(p => p.d50)))}–${fmt(Math.max(...r.parts.map(p => p.d50)))} · D10 ${fmt(Math.min(...r.parts.map(p => p.d10)))}–${fmt(Math.max(...r.parts.map(p => p.d10)))}µm</small>` : ''}
         ${bw.length ? `<br><small class="pbw">☕ 이 분쇄로 내린 추출 ${bw.length}번 · 최근 ${esc(bw[0].name)} ${fmtT(bw[0].t)}${bw[0].endMin != null ? (bw[0].t < bw[0].endMin - 10 ? ' (빨리 끝남)' : bw[0].t > bw[0].endMax + 10 ? ' (늦게 끝남)' : ' (목표 안)') : ''}</small>` : ''}
         ${hasKids ? `<br><button type="button" class="kids" data-kids="${r.id}">${S.openMerged.has(r.id) ? '원본 접기 ▴' : `원본 ${r.merged}장 보기 ▾`}</button>` : ''}${child ? '<br><small class="childnote">합친 기록의 원본</small>' : ''}</div>
       <button class="btn" data-edit="1" title="편집">✎</button>
@@ -2312,7 +2312,42 @@ function updSelBtns() {
   const n = S.sel.size;
   $('#btnToCompare').textContent = n ? `비교 ${n} →` : '비교 →';
   $('#btnMerge').disabled = n < 2 || n > 3;
+  $('#btnFixPx').disabled = !n;
 }
+/* 1픽셀 맞추기 (2.54): 같은 자리에서 찍었는데 시트 표식을 잘못 잡아 1픽셀 값이 틀린 기록을 맞는 값으로 다시 계산.
+   입자 크기 = 펴진 사진 픽셀 × 1픽셀 µm 이라서, 크기를 (맞는 값 ÷ 저장된 값) 배로 고침. 합친 기록은 원본 장을 고친 뒤 다시 합침 */
+$('#btnFixPx').onclick = async () => {
+  const sel = S.records.filter(r => S.sel.has(r.id)); if (!sel.length) return;
+  const set = new Set();
+  for (const r of sel) { if (r.merged && r.mergedFrom) r.mergedFrom.forEach(id => set.add(id)); else set.add(r.id); }
+  const singles = S.records.filter(r => set.has(r.id) && !r.merged && r.umPerPx);
+  if (!singles.length) { toast('1픽셀 값이 저장된 기록이 없어요'); return; }
+  const others = S.records.filter(r => !set.has(r.id) && !r.merged && r.umPerPx && r.method === singles[0].method).map(r => r.umPerPx).sort((a, b) => a - b);
+  const def = others.length ? others[others.length >> 1] : '';
+  const cur = singles.map(r => r.umPerPx), lo = Math.min(...cur), hi = Math.max(...cur);
+  const v = await askModal({ title: '1픽셀 값 맞추기', ok: '다시 계산',
+    message: `고를 기록 ${singles.length}장의 지금 값은 ${lo}${hi !== lo ? '~' + hi : ''}µm예요. 같은 자리·같은 거리에서 찍은 정상 기록의 값을 적으면, 입자 크기를 그 비율로 다시 계산해요 (합친 기록도 다시 합쳐요). 사진이 비뚤게 펴진 만큼의 오차는 조금 남을 수 있어요.`,
+    fields: [{ label: '맞는 1픽셀 값 (µm)', value: String(def) }] });
+  if (!v) return;
+  const target = +String(v[0]).replace(',', '.');
+  if (!(target > 5 && target < 500)) { toast('1픽셀 값을 숫자로 적어 주세요'); return; }
+  let n = 0;
+  for (const r of singles) {
+    const f = target / r.umPerPx; if (Math.abs(f - 1) < 0.002) continue;
+    r.d = r.d.map(x => +(x * f).toFixed(1)); (r.rescaled = r.rescaled || []).push({ from: r.umPerPx, to: target, at: Date.now() }); r.umPerPx = target; n++;
+    if (!memoryOnly) { try { await DB.put(r); } catch (e) { } }
+  }
+  for (const m of S.records.filter(m => m.merged && m.mergedFrom && m.mergedFrom.some(id => set.has(id)))) {
+    const recs = m.mergedFrom.map(id => S.records.find(x => x.id === id));
+    if (recs.some(x => !x)) continue;
+    m.d = [].concat(...recs.map(r => r.d));
+    m.parts = recs.map(r => { const st = Core.stats(r.d, finesUm()); return { n: st.n, d10: st.d10, d50: st.d50, d90: st.d90, fines: st.finesVol, ts: r.ts }; });
+    m.umPerPx = +(recs.reduce((a, r) => a + (r.umPerPx || 0), 0) / recs.length).toFixed(2); m.rescaled = true;
+    if (!memoryOnly) { try { await DB.put(m); } catch (e) { } }
+  }
+  if (typeof gdStatCache !== 'undefined') gdStatCache.clear();
+  gsDirty(); refreshRecords(); toast(n ? `${n}장을 1픽셀 ${target}µm로 다시 계산했어요` : '바꿀 기록이 없었어요 (이미 같은 값)');
+};
 $('#recList').addEventListener('change', e => {
   const row = e.target.closest('.rec'); if (!row) return;
   if (e.target.checked) S.sel.add(row.dataset.id); else S.sel.delete(row.dataset.id);
