@@ -1390,8 +1390,8 @@ const DB = {
   },
   tx(mode) { return DB.db.transaction('records', mode).objectStore('records'); },
   all() { return new Promise((res, rej) => { const r = DB.tx('readonly').getAll(); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); },
-  put(rec) { return new Promise((res, rej) => { const r = DB.tx('readwrite').put(rec); r.onsuccess = () => res(); r.onerror = () => rej(r.error); }); },
-  del(id) { return new Promise((res, rej) => { const r = DB.tx('readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); }); },
+  put(rec) { gsDirty(); return new Promise((res, rej) => { const r = DB.tx('readwrite').put(rec); r.onsuccess = () => res(); r.onerror = () => rej(r.error); }); },
+  del(id) { gsDirty(); return new Promise((res, rej) => { const r = DB.tx('readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); }); },
 };
 let memoryOnly = false; // IndexedDB를 못 쓰는 환경 대비
 
@@ -1414,7 +1414,7 @@ async function loadFile(file) {
   if (!file) return;
   presetSliders();
   spin(true, '사진 불러오는 중…');
-  setStatus('⏳ 사진 해석 중…'); $('#calDone').hidden = true;
+  setStatus('⏳ 사진 해석 중…'); $('#calDone').hidden = true; S.calCheck = null;
   $('#panelWork').classList.remove('hidden');
   await tick(40);
   try {
@@ -3069,9 +3069,19 @@ async function loadSheet(full, W, H, file, down) {
   const cal = sheetCal(), pctTxt = v => `${(v * 100).toFixed(1)}%`;
   if (sc.s && sc.s > 0.85 && sc.s < 1.15 && !sc.coinOnly) {           // 카드로 잼 → 이 시트 인쇄 크기로 등록(갱신)
     scale = sc.s; scaleSrc = '카드';
+    S.calCheck = cal ? { prev: cal.scale, diff: sc.s / cal.scale - 1 } : null;   // 이미 등록돼 있으면 '확인'
     setSheetCal({ scale: sc.s, ts: Date.now() });
   } else if (cal) {                                                      // 등록해 둔 인쇄 크기
     scale = cal.scale; scaleSrc = '등록값';
+    // 등록(마지막 확인)한 날이 아니면 하루 한 번 인쇄물 확인: 종이를 새로 뽑았으면 배율이 다를 수 있음
+    const today = new Date().toDateString();
+    if (new Date(cal.ts).toDateString() !== today && lsGet('gs_cal_ask', '') !== today) {
+      spin(false);
+      const ok = await askModal({ title: '인쇄물 확인', ok: '같은 인쇄물이에요', cancel: '카드로 확인할게요',
+        message: `인쇄 크기는 ${new Date(cal.ts).getMonth() + 1}/${new Date(cal.ts).getDate()}에 카드로 잰 ${pctTxt(cal.scale)}로 계산해요. 그때와 같은 종이(또는 같은 프린터·설정으로 뽑은 종이)면 그대로 쓰면 돼요. 새로 인쇄했거나 잘 모르겠으면 카드를 카드 자리에 올리고 시트 전체를 한 번 찍어 확인해 주세요.` });
+      if (!ok) { showCalDone(null, 'card'); return; }
+      lsSet('gs_cal_ask', today); spin(true);
+    }
   } else if (sc.s && sc.s > 0.85 && sc.s < 1.15) {                      // 등록 전 · 동전만
     scale = sc.s; scaleSrc = sc.how.join('·');
     warn.push('동전으로만 인쇄 크기를 쟀어요. 동전은 두께와 반사 때문에 덜 정확해요. 카드를 카드 자리에 올리고 시트 전체를 한 번 찍어 인쇄 크기를 등록해 주세요.');
@@ -3096,8 +3106,9 @@ async function loadSheet(full, W, H, file, down) {
   prefillMeta(); showGeoWarn(warn);
   await computeAnalysis();
   spin(false);
-  if (sheetEmpty()) { showCalDone(scaleSrc === '카드' ? scale : null); return; }   // 가루 없이 찍은 사진(처음 카드 등록 등) → 결과 대신 등록 안내
-  setStatus(`✓ 분석 완료: ${S.lastStats && S.lastStats.n || 0}개 입자 (인쇄 시트 · ${scaleSrc === '카드' ? `카드로 인쇄 크기 ${pctTxt(scale)} 등록` : scaleSrc === '등록값' ? `등록한 인쇄 크기 ${pctTxt(scale)}` : scaleSrc ? scaleSrc + ' 기준' : '인쇄 크기 미등록'})`, scaleSrc ? 'ok' : undefined);
+  if (sheetEmpty()) { showCalDone(scaleSrc === '카드' ? scale : null); return; }
+  if (scaleSrc === '카드' && S.calCheck) toast(Math.abs(S.calCheck.diff) <= 0.005 ? `✓ 같은 인쇄물이에요 (${pctTxt(scale)})` : `인쇄 크기가 ${pctTxt(S.calCheck.prev)} → ${pctTxt(scale)}로 바뀌어 새로 등록했어요`);   // 가루 없이 찍은 사진(처음 카드 등록 등) → 결과 대신 등록 안내
+  setStatus(`✓ 분석 완료: ${S.lastStats && S.lastStats.n || 0}개 입자 (인쇄 시트 · ${scaleSrc === '카드' ? `카드로 인쇄 크기 ${pctTxt(scale)} ${S.calCheck ? (Math.abs(S.calCheck.diff) <= 0.005 ? '확인 · 같은 인쇄물' : '새로 등록') : '등록'}` : scaleSrc === '등록값' ? `등록한 인쇄 크기 ${pctTxt(scale)}` : scaleSrc ? scaleSrc + ' 기준' : '인쇄 크기 미등록'})`, scaleSrc ? 'ok' : undefined);
   $('#panelWork').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 /* 페이지 mm 영역을 res px/mm로 펴서 밝기·채도 읽기 */
@@ -3176,7 +3187,9 @@ function sheetScale(fctx, W, H, Hm) {
 
 /* 인쇄 크기 등록 (시트마다 처음 한 번 카드로) */
 function sheetCal() { try { const o = JSON.parse(localStorage.getItem('gs_sheet_cal') || 'null'); return o && o.scale > 0.85 && o.scale < 1.15 ? o : null; } catch (e) { return null; } }
-function setSheetCal(o) { try { if (o) localStorage.setItem('gs_sheet_cal', JSON.stringify(o)); else localStorage.removeItem('gs_sheet_cal'); } catch (e) { } }
+/* 기록·인쇄 크기가 바뀌면 표시 → 레시피북이 열릴 때 구글 드라이브 자동 백업에 올림 */
+function gsDirty() { try { localStorage.setItem('gs_dirty', String(Date.now())); } catch (e) { } }
+function setSheetCal(o) { gsDirty(); try { if (o) localStorage.setItem('gs_sheet_cal', JSON.stringify(o)); else localStorage.removeItem('gs_sheet_cal'); } catch (e) { } }
 /* 가루가 거의 없는 시트 사진인지: 입자 수가 적거나, 입자 면적이 분석 칸의 0.6%도 안 됨 (실제 가루 사진은 성기게 펴도 3% 넘음) */
 function sheetEmpty() {
   const d = S.lastD || [], k = S.sheet && S.sheet.k, r = S.geo && S.geo.analysis && S.geo.analysis.r;
@@ -3186,13 +3199,18 @@ function sheetEmpty() {
   let a = 0; for (const um of d) a += Math.PI / 4 * (um / 1000) ** 2;
   return a / area < 0.006;
 }
-function showCalDone(scale) {
+function showCalDone(scale, why) {
   for (const id of ['#panelWork', '#panelResult', '#panelSave']) $(id).classList.add('hidden');
   S.lastD = null; S.lastStats = null; updSaveBar(); showGeoWarn([]);
   const box = $('#calDone'), pct = v => (v * 100).toFixed(1) + '%';
   box.classList.toggle('empty', !scale);
-  box.innerHTML = scale
-    ? `<div class="ck">✓ 인쇄 크기 등록 완료</div><b>${pct(scale)}</b><small>100mm → ${(scale * 100).toFixed(1)}mm로 인쇄됨 · 카드로 잼</small>
+  const ck = S.calCheck, same = ck && Math.abs(ck.diff) <= 0.005;
+  box.innerHTML = why === 'card'
+    ? `<div class="ck">카드로 인쇄물 확인</div>
+       <p>카드를 카드 자리에 올리고<br><b style="display:inline;font-size:inherit">시트 전체</b>(네 귀퉁이 표식까지)를 찍어 주세요.<br>가루를 같이 올려 둬도 돼요.</p>
+       <button type="button" class="btn primary" id="calShot">📷 카드와 같이 찍기</button>`
+    : scale
+    ? `<div class="ck">${ck ? (same ? '✓ 같은 인쇄물이에요' : '✓ 인쇄 크기가 바뀌어 새로 등록했어요') : '✓ 인쇄 크기 등록 완료'}</div><b>${pct(scale)}</b><small>${ck ? `전에 등록한 ${pct(ck.prev)}와 ${(Math.abs(ck.diff) * 100).toFixed(1)}% ${same ? '차이 · 그대로 써요' : '차이 · 프린터나 배율 설정이 달라진 것 같아요'}` : `100mm → ${(scale * 100).toFixed(1)}mm로 인쇄됨 · 카드로 잼`}</small>
        <p>이제 네모 칸 안에 가루를 얇게 펴고<br><b style="display:inline;font-size:inherit">네모만 가까이</b> 찍어 주세요. 카드는 없어도 돼요.</p>
        <button type="button" class="btn primary" id="calShot">📷 가루 찍기</button>`
     : `<div class="ck">가루가 보이지 않아요</div>
@@ -3200,7 +3218,7 @@ function showCalDone(scale) {
        <button type="button" class="btn primary" id="calShot">📷 다시 찍기</button>`;
   box.hidden = false;
   $('#calShot').onclick = () => $('#fileCamera').click();
-  setStatus(scale ? `✓ 인쇄 크기 ${pct(scale)} 등록 · 가루를 찍어 주세요` : '⚠ 가루가 보이지 않아 결과를 내지 않았어요', scale ? 'ok' : 'err');
+  setStatus(why === 'card' ? '카드와 시트 전체를 찍어 인쇄물을 확인해 주세요' : scale ? `✓ 인쇄 크기 ${pct(scale)} ${ck ? '확인' : '등록'} · 가루를 찍어 주세요` : '⚠ 가루가 보이지 않아 결과를 내지 않았어요', why === 'card' ? '' : scale ? 'ok' : 'err');
   renderGuide && renderGuide();
   box.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
@@ -3208,7 +3226,7 @@ function renderCalLine() {
   const el = $('#calLine'); if (!el) return;
   const c = sheetCal();
   el.innerHTML = c
-    ? `✓ 인쇄 크기 등록됨 <b>${(c.scale * 100).toFixed(1)}%</b> (${new Date(c.ts).getMonth() + 1}/${new Date(c.ts).getDate()}) · 이제 카드 없이 <b>네 귀퉁이 표식과 네모만 화면에 꽉 차게</b> 찍어요 <button type="button" id="calReset">다시 등록</button>`
+    ? `✓ 인쇄 크기 등록됨 <b>${(c.scale * 100).toFixed(1)}%</b> (${new Date(c.ts).getMonth() + 1}/${new Date(c.ts).getDate()} 확인) · 같은 인쇄물이면 카드 없이 <b>네 귀퉁이 표식과 네모만 화면에 꽉 차게</b> 찍어요 <button type="button" id="calReset">다시 등록</button>`
     : `<b>① 처음 한 번</b>: 카드를 카드 자리에 올리고 <b>시트 전체</b>를 찍어 인쇄 크기를 등록해요. 그다음부턴 네모만 가까이 찍으면 돼요.`;
   el.classList.toggle('todo', !c); renderGuide();
   if ($('#calReset')) $('#calReset').onclick = () => { setSheetCal(null); renderCalLine(); toast('등록을 지웠어요 · 카드를 올리고 시트 전체를 찍어 다시 등록해 주세요'); };
@@ -3286,9 +3304,11 @@ window.addEventListener('popstate', () => {
   let done = true;
   if (zo && zo.classList.contains('on')) zo.classList.remove('on');
   else if (md && !md.classList.contains('hidden')) { const c = $('#mCancel'); if (c) c.click(); else md.classList.add('hidden'); }
+  else if (scrollY > 120) window.scrollTo({ top: 0, behavior: 'smooth' });   // 기록 보러 내려가 있으면 먼저 맨 위(사진 칸)로
   else if ($('#tab-analyze').classList.contains('hidden')) switchTab('analyze');
+  else if (performance.now() - (window._backArm || 0) > 2500) { window._backArm = performance.now(); toast('한 번 더 누르면 레시피북으로 가요'); }
   else done = false;
-  if (done) { try { history.pushState({ pg: 1 }, ''); } catch (e) { } } else history.back();   // 분석 탭이면 한 번에 레시피북으로
+  if (done) { try { history.pushState({ pg: 1 }, ''); } catch (e) { } } else history.back();
 });
 $('#tbCam').onclick = () => { switchTab('analyze'); $('#fileCamera').click(); };
 $('#tbSheet').onclick = () => { lsSet('gs_sheet_printed', '1'); renderGuide(); printSheet(); };
