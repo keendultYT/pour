@@ -2209,7 +2209,7 @@ async function saveRecord() {
     grinder: $('#mGrinder').value.trim(), burr: $('#mBurr').value.trim(), setting: $('#mSetting').value.trim(),
     beans: $('#mBeans').value.trim(), beanId: ($('#mBeans').selectedOptions[0] && $('#mBeans').selectedOptions[0].dataset.id) || '', note: $('#mNote').value.trim(),
     coasterMm: +$('#coasterMm').value || 104, umPerPx: +(S.geo.mmPerPx * 1000).toFixed(2),
-    method: S.sheet ? 'sheet' : 'coaster', ...(S.sheet ? { printScale: +S.sheet.scale.toFixed(4), scaleBy: S.sheet.how } : {}),
+    method: S.sheet ? 'sheet' : 'coaster', ...(S.sheet ? { printScale: +S.sheet.scale.toFixed(4), scaleBy: S.sheet.how, lineOk: +(S.sheetLine || 0).toFixed(2) } : {}),
     T: +$('#rT').value / 100, split: +$('#rS').value / 100,
     nTotal: S.res.particles.length, nExcl: S.res.particles.length - S.lastD.length,
     d: Array.from(S.lastD, v => +v.toFixed(1)),
@@ -3083,7 +3083,7 @@ function findSheetMarks(G, w, h) {
     }
     comps.push({ n, cx: sx / n, cy: sy / n, bw: x1 - x0 + 1, bh: y1 - y0 + 1 });
   }
-  const cand = comps.filter(c => c.bw >= 8 && c.bh >= 8 && c.bw / c.bh > 0.4 && c.bw / c.bh < 2.5 && c.n / (c.bw * c.bh) > 0.5 && c.n < w * h * 0.04)
+  const cand = comps.filter(c => c.bw >= 8 && c.bh >= 8 && c.bw / c.bh > 0.55 && c.bw / c.bh < 1.8 && c.n / (c.bw * c.bh) > 0.5 && c.n < w * h * 0.04)
     .map(c => ({ ...c, fill: c.n / (c.bw * c.bh) })).sort((a, b) => b.n - a.n).slice(0, 10);
   let best = null;
   const k = cand.length;
@@ -3102,6 +3102,10 @@ function findSheetMarks(G, w, h) {
     // 표식 크기(12mm)와 표식 사이 거리(120mm)의 비율이 맞는지
     const side = Math.sqrt(Math.abs(area)), msz = Math.sqrt(Math.max(...ns));
     if (!convex || side / msz < 4 || side / msz > 20) continue;
+    // 표식 네 개는 120×120mm 정사각형의 꼭짓점: 마주 보는 변 길이가 비슷하고 가로·세로도 비슷해야 함 (비스듬히 찍어도 이 안)
+    const D = (p, r) => Math.hypot(p.cx - r.cx, p.cy - r.cy), e = [0, 1, 2, 3].map(i => D(o[i], o[(i + 1) % 4]));
+    if (Math.min(e[0], e[2]) / Math.max(e[0], e[2]) < 0.7 || Math.min(e[1], e[3]) / Math.max(e[1], e[3]) < 0.7) continue;
+    const asp = (e[0] + e[2]) / (e[1] + e[3]); if (asp < 0.6 || asp > 1.67) continue;
     if (!best || area > best.area) best = { area, o };
   }
   if (!best) return null;
@@ -3112,6 +3116,23 @@ function findSheetMarks(G, w, h) {
   return { pts: o.slice(ri).concat(o.slice(0, ri)), oriented: true };
 }
 
+/* 펴기 확인: 표식으로 만든 Hm이 맞으면 페이지 y=147mm 검은 눈금자 줄이 바로 위(145mm)보다 어둡게 나와야 함 → 맞는 비율 */
+function sheetLineCheck(fctx, W, H, Hm) {
+  const pts = [], X0 = SHEET.area.x + 1, X1 = SHEET.area.x + SHEET.area.s - 1;
+  for (let x = X0; x <= X1; x += 0.5) pts.push(x);
+  const all = []; for (const x of pts) for (const y of [144.8, 145.4, 146.6, 146.9, 147.1, 147.4]) all.push(Hm(x, y));
+  if (all.some(([u, v]) => !(u >= 1 && v >= 1 && u < W - 1 && v < H - 1))) return 0;
+  const bx0 = Math.floor(Math.min(...all.map(p => p[0]))), by0 = Math.floor(Math.min(...all.map(p => p[1])));
+  const bx1 = Math.ceil(Math.max(...all.map(p => p[0]))) + 1, by1 = Math.ceil(Math.max(...all.map(p => p[1]))) + 1;
+  const d = fctx.getImageData(bx0, by0, Math.max(1, bx1 - bx0), Math.max(1, by1 - by0)), w = d.width;
+  const L = (x, y) => { const [u, v] = Hm(x, y), i = 4 * ((Math.round(v) - by0) * w + (Math.round(u) - bx0)); return 0.3 * d.data[i] + 0.59 * d.data[i + 1] + 0.11 * d.data[i + 2]; };
+  let ok = 0;
+  for (const x of pts) {
+    const paper = Math.max(L(x, 144.8), L(x, 145.4)), ink = Math.min(L(x, 146.6), L(x, 146.9), L(x, 147.1), L(x, 147.4));
+    if (ink < paper * 0.85) ok++;
+  }
+  return ok / pts.length;
+}
 /* 시트 사진 불러오기: 표식 → 원근 펴기 → 분석 칸 이미지 */
 async function loadSheet(full, W, H, file, down) {
   const fctx = full.getContext('2d', { willReadFrequently: true });
@@ -3129,6 +3150,14 @@ async function loadSheet(full, W, H, file, down) {
   const img = mk.pts.map(p => [p.cx / s, p.cy / s]);
   const Hm = homography(SHEET.marks, img);
   const pxPerMm = Math.hypot(img[1][0] - img[0][0], img[1][1] - img[0][1]) / 120;
+  // 표식을 제대로 찾았는지 확인 (2.52): 펴진 자리에 시트 아래 검은 눈금자 줄(y=147mm)이 있어야 함
+  const lineOk = sheetLineCheck(fctx, W, H, Hm);
+  S.sheetLine = lineOk;
+  if (lineOk < 0.5) {
+    spin(false); setStatus('⚠ 네 귀퉁이 표식을 잘못 찾았어요 · 다시 찍어 주세요', 'err');
+    showGeoWarn([`표식이 아닌 곳을 표식으로 읽어서 사진이 비뚤게 펴졌어요 (눈금자 확인 ${Math.round(lineOk * 100)}%). 결과를 내지 않았어요. 시트 전체(검은 표식 네 개와 아래 눈금자)가 화면에 다 들어오게, 위에서 수직으로 다시 찍어 주세요. 표식 근처의 어두운 물건(테이프·그림자·가루 뭉치)은 치워 주세요.`]);
+    return;
+  }
   const warn = [];
   if (!mk.oriented) warn.push('방향 표식(속이 빈 사각형)을 또렷하게 못 찾았어요. 카드·동전 자리를 못 쓸 수 있어요.');
   // 분석 칸 (가장자리 2mm 여유 포함)을 반듯한 이미지로
