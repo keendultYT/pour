@@ -140,6 +140,61 @@ table.cmp small.burr{color:var(--mute)}
 .stp input{flex:1;min-width:0;text-align:center}
 .stp button{flex:none;width:40px;border:1px solid var(--line);border-radius:10px;background:var(--raise);color:var(--ink);font:inherit;font-size:20px;line-height:1;touch-action:manipulation;user-select:none;-webkit-user-select:none}
 .stp button:active{background:var(--line)}
+.gdchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 10px;padding-bottom:2px}
+.gdchips::-webkit-scrollbar{display:none}
+.gdchips button{flex:none;border:1px solid var(--line);background:var(--panel);color:var(--mute);border-radius:999px;padding:6px 13px;font:inherit;font-size:13px;white-space:nowrap}
+.gdchips button.on{border-color:var(--accent);color:var(--ink);background:color-mix(in srgb,var(--accent) 14%,var(--panel))}
+.gdchips button small{margin-left:4px;opacity:.7}
+.gdhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.gdhead b{font-size:15px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gdhead button{flex:none;border:1px solid var(--line);background:var(--raise);color:var(--mute);border-radius:999px;padding:3px 10px;font:inherit;font-size:12px;white-space:nowrap}
+.gdsub{font-size:11.5px;color:var(--mute);margin:2px 0 0}
+.gdcfg{background:var(--raise);border-radius:12px;padding:10px;margin-top:8px;display:flex;flex-direction:column;gap:8px}
+.gdcfg[hidden]{display:none}
+.gdcfg .r3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.gdcfg label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--mute);margin:0;white-space:nowrap}
+.gdcfg input{width:100%;min-width:0;text-align:center}
+.gdcfg p{margin:0;font-size:12px;color:var(--mute);line-height:1.55}
+.gddial{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:6px}
+.gddial svg{width:250px;max-width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.gddial .stp{width:auto}
+.gddial .stp span{min-width:130px;text-align:center;font-size:13px;color:var(--mute);align-self:center;font-variant-numeric:tabular-nums}
+.gddial .stp span b{color:var(--ink)}
+.gdband{font-size:12px;color:var(--mute)}
+.gdrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:10px 2px;border-top:1px solid var(--line);cursor:pointer}
+.gdrow .nm{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gdrow .nm small{font-weight:400;color:var(--mute);margin-left:5px}
+.gdrow .v{font-size:19px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.gdrow .bar{grid-column:1/-1;position:relative;height:8px;border-radius:4px;background:var(--raise);margin-top:4px}
+.gdrow .bar .rg{position:absolute;top:0;bottom:0;border-radius:4px;background:color-mix(in srgb,var(--accent) 45%,transparent)}
+.gdrow .bar .dt{position:absolute;top:1px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--good)}
+.gdrow .bar .nd{position:absolute;top:-4px;width:4px;height:16px;margin-left:-2px;border-radius:2px;background:var(--ink)}
+.gdrow .tg{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gdrow .tr{text-align:right;color:var(--mute)}
+.gdrow.dim{cursor:default}.gdrow.dim .nm{color:var(--mute)}
+.gdrow .why{grid-column:1/-1;font-size:12px;color:var(--mute)}
+.tg.m{color:var(--good)}.tg.e{color:var(--accent)}.tg.o{color:var(--warn)}
+.gdlh{font-size:12px;color:var(--mute);margin:14px 0 2px}
+.gcme{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--mute);margin:-2px 0 10px}
+.gcme b{color:var(--ink)}
+.gcme .btn{margin-left:auto}
+.gcq{width:100%;margin:0 0 6px}
+.gcrow{border-top:1px solid var(--line)}
+.gcrow>button{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;color:var(--ink);font:inherit;text-align:left;padding:11px 2px}
+.gcrow>button b{flex:1;min-width:0;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gcrow>button span{font-size:12px;color:var(--mute);white-space:nowrap}
+.gcrow>button em{font-style:normal;font-size:11px;font-weight:700;color:var(--good);white-space:nowrap}
+.gcdet{padding:0 2px 12px}
+.gcdet canvas{width:100%;height:220px;display:block;border-radius:10px}
+.gcdet p{margin:8px 0 0;font-size:12.5px;line-height:1.6}
+.gcdet table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px;font-variant-numeric:tabular-nums;table-layout:fixed}
+.gcdet td{padding:4px 2px;border-top:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gcdet td:first-child{width:44%}.gcdet td:nth-child(2){width:14%}.gcdet td:nth-child(3){width:20%}
+.gcpick{display:flex;flex-direction:column;max-height:60vh;overflow:auto;margin:6px 0}
+.gcpick label{display:flex;align-items:center;gap:8px;padding:9px 2px;border-top:1px solid var(--line);margin:0;font-size:13px;color:var(--ink)}
+.gcpick label span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gcpick label small{color:var(--mute);white-space:nowrap}
+.gcpick label em{font-style:normal;font-size:11px;color:var(--good);white-space:nowrap}
 .caldone{margin:2px 0 12px;padding:18px 16px;border-radius:14px;border:1.5px solid color-mix(in srgb,var(--good) 55%,transparent);background:color-mix(in srgb,var(--good) 8%,var(--panel));text-align:center}
 .caldone.empty{border-color:color-mix(in srgb,var(--warn) 55%,transparent);background:color-mix(in srgb,var(--warn) 8%,var(--panel))}
 .caldone .ck{font-size:13px;font-weight:800;color:var(--good)}.caldone.empty .ck{color:var(--warn)}
@@ -301,7 +356,7 @@ html[data-pt="s1"] .btn.primary{background:linear-gradient(90deg,var(--pt-btn),v
 </head>
 <body>
 <header class="ttlh"><a class="tsw" href="../" aria-label="레시피북으로"><h1 class="gtt">입자 분석</h1><span class="swc"><em>📖</em><span>레시피북</span> ⇄</span></a><button class="probtn" id="proTog" type="button" aria-pressed="false" title="전문가 모드 · 레시피북과 같이 바뀌어요"><em>⚡</em>전문가</button><button class="install hidden" id="btnInstall" type="button">＋ 앱 설치</button></header>
-<div class="segwrap"><nav class="tabs"><button data-tab="analyze" aria-selected="true"><em>🔬</em>분석</button><button data-tab="records" aria-selected="false"><em>🗂️</em><span>기록<i class="cnt" id="recCount"></i></span></button><button class="mid" id="tbCam" type="button" aria-label="촬영"><b>📷</b></button><button data-tab="compare" aria-selected="false"><em>📊</em>비교</button><button id="tbSheet" type="button"><em>🖨️</em>시트</button></nav></div>
+<div class="segwrap"><nav class="tabs"><button data-tab="analyze" aria-selected="true"><em>🔬</em>분석</button><button data-tab="records" aria-selected="false"><em>🗂️</em><span>기록<i class="cnt" id="recCount"></i></span></button><button class="mid" id="tbCam" type="button" aria-label="촬영"><b>📷</b></button><button data-tab="compare" aria-selected="false"><em>📊</em>비교</button><button data-tab="grinders" aria-selected="false"><em>⚙️</em>그라인더</button></nav></div>
 <div class="status" id="status">⏳ 앱 준비 중…</div>
 <main>
 
@@ -490,6 +545,22 @@ html[data-pt="s1"] .btn.primary{background:linear-gradient(90deg,var(--pt-btn),v
     <select id="mapG" aria-label="그라인더"></select>
     <div class="chart-wrap" style="margin-top:10px"><canvas id="chartMap" height="280"></canvas></div>
     <div class="hint" style="margin-top:8px" id="mapNote"></div>
+  </div>
+</section>
+
+<section id="tab-grinders" class="hidden">
+  <div class="panel">
+    <h2>내 그라인더 맞추기</h2>
+    <div class="hint" style="margin:-4px 0 10px">다이얼을 돌리면 내 다른 그라인더가 같은 굵기(D50)가 되는 분쇄도로 같이 바뀌어요. 아래 줄을 누르면 그 그라인더가 기준이 돼요.</div>
+    <div class="gdchips" id="gdChips" role="tablist" aria-label="기준 그라인더"></div>
+    <div id="gdMain"></div>
+    <div id="gdList"></div>
+  </div>
+  <div class="panel">
+    <h2>그라인더 커뮤니티</h2>
+    <div class="gcme" id="gcMe"></div>
+    <input type="search" id="gcQ" class="gcq" placeholder="🔍 그라인더 찾기" autocomplete="off">
+    <div id="gcList"><div class="hint">불러오는 중…</div></div>
   </div>
 </section>
 
@@ -3305,13 +3376,359 @@ $('#guideClose').onclick = () => { lsSet('gs_guide_off', '1'); renderGuide(); to
 function switchTab(name) {
   $('#status').hidden = name !== 'analyze';
   for (const b of $$('nav.tabs button')) b.setAttribute('aria-selected', b.dataset.tab === name);
-  for (const n of ['analyze', 'records', 'compare']) $('#tab-' + n).classList.toggle('hidden', n !== name);
+  for (const n of ['analyze', 'records', 'compare', 'grinders']) $('#tab-' + n).classList.toggle('hidden', n !== name);
+  if (name === 'grinders') renderGrinders();
   if (name === 'records') renderRecords();
   if (name === 'compare') { renderCompare(); if (isPro()) renderMap(); }
   if (name === 'analyze') { resizeView(); if (S.full) { draw(); } drawSingle(); }
   window.scrollTo(0, 0);
 }
 for (const b of $$('nav.tabs button[data-tab]')) b.onclick = () => switchTab(b.dataset.tab);
+
+/* ══ 그라인더 탭 (2.50): 내 그라인더 맞추기(다이얼) + 그라인더 커뮤니티 ══ */
+const GRD = { base: '', val: null, cfgOpen: false, comm: null, commAt: 0, open: '', q: '' };
+function gdCfgAll() { try { return JSON.parse(localStorage.getItem('pour.grinderCfg') || '{}') || {}; } catch (e) { return {}; } }
+function gdCfgSave(k, c) { const all = gdCfgAll(); all[k] = c; try { localStorage.setItem('pour.grinderCfg', JSON.stringify(all)); } catch (e) { } gsDirty(); }
+const gdKey = (g, b) => gKey(g).replace(/[\s\-_.·()\[\]/]+/g, '') + '|' + gKey(b).replace(/[\s\-_.·()\[\]/]+/g, '');
+/* 분쇄도 글자 → 숫자. 숫자 사이 작은 칸이 있으면 '4.2' = 4 + 2칸 */
+function gdNum(str, sub) {
+  const t = String(str || '').trim();
+  if (sub > 1) { const m = t.match(/^(\d+)(?:\.(\d+))?$/); return m ? +m[1] + (m[2] ? +m[2] / sub : 0) : NaN; }
+  return /^\d+(\.\d+)?$/.test(t) ? +t : NaN;
+}
+function gdFmt(v, sub) {
+  sub = sub || 1;
+  const t = Math.round(v * sub);
+  if (Math.abs(v * sub - t) > 0.15) return sub > 1 ? Math.floor(v) + '.' + (v * sub - Math.floor(v) * sub).toFixed(1) : (Math.round(v * 10) / 10).toString();
+  const w = Math.floor(t / sub), k = t - w * sub;
+  return sub > 1 ? w + (k ? '.' + k : '') : String(t);
+}
+const gdSnap = (v, sub) => Math.round(v * (sub || 1)) / (sub || 1);
+const gdMed = v => { const q = v.slice().sort((a, b) => a - b), h = q.length >> 1; return q.length % 2 ? q[h] : (q[h - 1] + q[h]) / 2; };
+/* 잰 점 [분쇄도, D50] → 곡선. 순서대로 늘거나 줄면 점끼리 직선, 아니면 튀는 점에 덜 끌리는 직선 하나 */
+function gdCurve(pts) {
+  pts = pts.slice().sort((a, b) => a[0] - b[0]);
+  if (pts.length < 2) return null;
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), inc = ys[ys.length - 1] >= ys[0];
+  const mono = ys.every((y, i) => !i || (inc ? y > ys[i - 1] : y < ys[i - 1]));
+  const lo = xs[0], hi = xs[xs.length - 1];
+  if (!mono) {
+    const sl = []; for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) if (xs[i] !== xs[j]) sl.push((ys[j] - ys[i]) / (xs[j] - xs[i]));
+    const b = gdMed(sl), a = gdMed(pts.map(p => p[1] - b * p[0]));
+    if (!isFinite(b) || Math.abs(b) < 1e-6) return null;
+    return { pts, lo, hi, umAt: x => a + b * x, setAt: y => (y - a) / b };
+  }
+  const seg = i => [xs[i], ys[i], xs[i + 1], ys[i + 1]];
+  const lin = ([x0, y0, x1, y1], x) => y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+  const inv = ([x0, y0, x1, y1], y) => x0 + (x1 - x0) * (y - y0) / (y1 - y0);
+  const n = pts.length;
+  return {
+    pts, lo, hi,
+    umAt: x => { let i = 0; if (x >= xs[n - 1]) i = n - 2; else while (i < n - 2 && x > xs[i + 1]) i++; return lin(seg(i), x); },
+    setAt: y => {
+      let i = 0;
+      const before = inc ? y <= ys[0] : y >= ys[0], after = inc ? y >= ys[n - 1] : y <= ys[n - 1];
+      if (after) i = n - 2; else if (!before) while (i < n - 2 && (inc ? y > ys[i + 1] : y < ys[i + 1])) i++;
+      return inv(seg(i), y);
+    },
+  };
+}
+const gdStatCache = new Map();
+function gdD50(r) { if (!gdStatCache.has(r.id)) { try { gdStatCache.set(r.id, Core.stats(r.d, finesUm(), 'vol')); } catch (e) { gdStatCache.set(r.id, null); } } const st = gdStatCache.get(r.id); return st && isFinite(st.d50) ? st : null; }
+/* 내 그라인더(그라인더 + 버)마다 잰 점 · 다이얼 범위 */
+function gdMine() {
+  const hid = hiddenOrig(), cfgs = gdCfgAll(), m = new Map();
+  for (const r of S.records) {
+    if (hid.has(r.id) || !r.grinder || !r.setting) continue;
+    const k = gdKey(r.grinder, r.burr);
+    if (!m.has(k)) m.set(k, { k, name: r.grinder, burr: r.burr || '', recs: [] });
+    m.get(k).recs.push(r);
+  }
+  const out = [];
+  for (const g of m.values()) {
+    const c = cfgs[g.k] || {}, sub = Math.max(1, Math.round(+c.sub || 1));
+    const by = new Map();
+    for (const r of g.recs) { const x = gdNum(r.setting, sub), st = gdD50(r); if (!isFinite(x) || !st) continue; if (!by.has(x)) by.set(x, []); by.get(x).push(st.d50); }
+    const pts = [...by.entries()].map(([x, ys]) => [x, gdMed(ys)]).sort((a, b) => a[0] - b[0]);
+    const mx = pts.length ? pts[pts.length - 1][0] : 10;
+    const auto = { min: 0, max: Math.max(10, Math.ceil(mx * 1.4 / 5) * 5), sub: 1 };
+    out.push({ ...g, sub, min: isFinite(+c.min) && c.min !== '' && c.min != null ? +c.min : auto.min, max: isFinite(+c.max) && c.max ? +c.max : auto.max, custom: !!cfgs[g.k], pts, curve: gdCurve(pts), n: g.recs.length });
+  }
+  return out.sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
+}
+const gdLabel = g => g.name + (g.burr ? ' · ' + g.burr : '');
+function gdState(g, v) {
+  const step = 1 / (g.sub || 1);
+  if (g.pts.some(p => Math.abs(p[0] - v) <= step / 2 + 1e-9)) return ['m', '● 잰 값'];
+  if (g.curve && v >= g.curve.lo && v <= g.curve.hi) return ['e', '≈ 추정'];
+  return ['o', '≈ 대략 (잰 범위 밖)'];
+}
+/* 다이얼 그림: 아래 60°를 비운 300° 링 */
+const GD_SW = 300, GD_A0 = 120;
+function gdDialSvg(g, v) {
+  const c = 100, R = 82, span = g.max - g.min || 1, ang = x => GD_A0 + (x - g.min) / span * GD_SW;
+  const P = (r, a) => [c + r * Math.cos(a * Math.PI / 180), c + r * Math.sin(a * Math.PI / 180)];
+  const arc = (r, a1, a2) => { if (a2 - a1 < 0.3) return ''; const [x1, y1] = P(r, a1), [x2, y2] = P(r, a2); return `M${x1.toFixed(1)} ${y1.toFixed(1)}A${r} ${r} 0 ${a2 - a1 > 180 ? 1 : 0} 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`; };
+  const major = span >= 100 ? 50 : span > 15 ? 5 : 1, minor = span >= 100 ? 10 : g.sub > 1 && span <= 30 ? 1 / g.sub : 1;
+  let t = '';
+  for (let k = 0, x = g.min; x <= g.max + 1e-9 && k < 400; k++, x = g.min + k * minor) {
+    const a = ang(x), M = Math.abs(x / major - Math.round(x / major)) < 1e-6;
+    const [x1, y1] = P(R + 6, a), [x2, y2] = P(R + (M ? 14 : 10), a);
+    t += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--mute)" stroke-width="${M ? 1.6 : .8}" opacity="${M ? .9 : .5}"/>`;
+    if (M) { const [tx, ty] = P(R + 24, a); t += `<text x="${tx.toFixed(1)}" y="${(ty + 3.5).toFixed(1)}" font-size="9.5" text-anchor="middle" fill="var(--mute)">${+x.toFixed(2)}</text>`; }
+  }
+  const cl = x => Math.max(g.min, Math.min(g.max, x));
+  let ring = `<path d="${arc(R, ang(g.min), ang(g.max))}" stroke="var(--line)" stroke-width="10" fill="none" stroke-linecap="round"/>`;
+  if (g.curve) {
+    const lo = cl(g.curve.lo), hi = cl(g.curve.hi);
+    ring += `<path d="${arc(R, ang(g.min), ang(lo))}" stroke="var(--warn)" stroke-width="6" fill="none" opacity=".45" stroke-dasharray="3 4"/>` +
+      `<path d="${arc(R, ang(hi), ang(g.max))}" stroke="var(--warn)" stroke-width="6" fill="none" opacity=".45" stroke-dasharray="3 4"/>` +
+      `<path d="${arc(R, ang(lo), ang(hi))}" stroke="var(--accent)" stroke-width="6" fill="none" opacity=".85" stroke-linecap="round"/>`;
+  }
+  const dots = g.pts.filter(p => p[0] >= g.min && p[0] <= g.max).map(([x]) => { const [px, py] = P(R, ang(x)); return `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4.2" fill="var(--good)" stroke="var(--panel)" stroke-width="1.5"/>`; }).join('');
+  const a = ang(cl(v)), [nx, ny] = P(R - 16, a), [kx, ky] = P(R, a), st = gdState(g, v);
+  const col = st[0] === 'm' ? 'var(--good)' : st[0] === 'e' ? 'var(--accent)' : 'var(--warn)';
+  return `<svg viewBox="-14 -14 228 228" role="img" aria-label="${esc(gdLabel(g))} 분쇄도 ${gdFmt(v, g.sub)}">
+    <circle cx="${c}" cy="${c}" r="${R - 8}" fill="var(--raise)"/>${t}${ring}${dots}
+    <line x1="${c}" y1="${c}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="${col}" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="${kx.toFixed(1)}" cy="${ky.toFixed(1)}" r="9" fill="${col}" stroke="var(--panel)" stroke-width="2.5"/>
+    <circle cx="${c}" cy="${c}" r="5" fill="${col}"/>
+    <text x="${c}" y="${c + 34}" text-anchor="middle" font-size="30" font-weight="700" fill="var(--ink)">${gdFmt(v, g.sub)}</text>
+    <text x="${c}" y="${c + 52}" text-anchor="middle" font-size="11" font-weight="700" fill="${col}">${st[1]}</text></svg>`;
+}
+/* 커뮤니티에서 내가 안 잰 그라인더 (서로 다른 분쇄도 2개 이상) */
+function gdCommOthers(mine) {
+  if (!GRD.comm) return [];
+  const have = new Set(mine.map(g => g.k.split('|')[0])), m = new Map();
+  for (const e of GRD.comm) {
+    const k = e.gkey || gdKey(e.grinder, '').split('|')[0]; if (have.has(k)) continue;
+    const x = gdNum(e.setting, 1); if (!isFinite(x)) continue;
+    if (!m.has(k)) m.set(k, { names: {}, pts: [], people: new Set() });
+    const o = m.get(k); o.names[e.grinder] = (o.names[e.grinder] || 0) + 1; o.pts.push([x, e.d50]); o.people.add(e.nick + '#' + e.tag);
+  }
+  const out = [];
+  for (const [k, o] of m) {
+    if (new Set(o.pts.map(p => p[0])).size < 2) continue;
+    const name = Object.entries(o.names).sort((a, b) => b[1] - a[1])[0][0], mx = Math.max(...o.pts.map(p => p[0]));
+    const sl = []; for (let i = 0; i < o.pts.length; i++) for (let j = i + 1; j < o.pts.length; j++) if (o.pts[i][0] !== o.pts[j][0]) sl.push((o.pts[j][1] - o.pts[i][1]) / (o.pts[j][0] - o.pts[i][0]));
+    const b = gdMed(sl), a = gdMed(o.pts.map(p => p[1] - b * p[0])); if (!isFinite(b) || Math.abs(b) < 1e-6) continue;
+    const xs = o.pts.map(p => p[0]);
+    out.push({ k: k + '|', name, burr: '', sub: 1, min: 0, max: Math.max(10, Math.ceil(mx * 1.4 / 5) * 5), pts: [], comm: o.people.size, curve: { lo: Math.min(...xs), hi: Math.max(...xs), umAt: x => a + b * x, setAt: y => (y - a) / b } });
+  }
+  return out.sort((x, y) => y.comm - x.comm).slice(0, 12);
+}
+function renderGrinders() { gdRenderDial(); gcRender(); if (!GRD.comm || Date.now() - GRD.commAt > 5 * 60e3) gcLoad(); }
+function gdRenderDial() {
+  const all = gdMine(), ok = all.filter(g => g.curve), chips = $('#gdChips'), main = $('#gdMain'), list = $('#gdList');
+  if (!all.length) { chips.innerHTML = ''; main.innerHTML = '<div class="hint">분석 기록에 그라인더와 분쇄도를 숫자로 적어 저장하면 여기에 그라인더가 생겨요. 서로 다른 분쇄도를 2개 이상 재면 다이얼로 맞춰 볼 수 있어요.</div>'; list.innerHTML = ''; return; }
+  if (!all.some(g => g.k === GRD.base)) GRD.base = (ok[0] || all[0]).k;
+  const g = all.find(x => x.k === GRD.base);
+  if (GRD.val == null || GRD.val < g.min || GRD.val > g.max) GRD.val = g.pts.length ? g.pts[Math.floor((g.pts.length - 1) / 2)][0] : Math.round((g.min + g.max) / 2);
+  chips.innerHTML = all.map(x => `<button type="button" role="tab" aria-selected="${x.k === g.k}" class="${x.k === g.k ? 'on' : ''}" data-gk="${esc(x.k)}">${esc(gdLabel(x))}<small>${x.pts.length}</small></button>`).join('');
+  const um = g.curve ? g.curve.umAt(GRD.val) : null;
+  main.innerHTML = `<div class="gdhead"><b>${esc(gdLabel(g))}</b><button type="button" id="gdGear">⚙ 다이얼 범위</button></div>
+    <div class="gdsub">다이얼 ${gdFmt(g.min, 1)}~${gdFmt(g.max, 1)}${g.sub > 1 ? ` · 숫자 사이 ${g.sub}칸` : ''} · 잰 분쇄도 ${g.pts.length}개${g.custom ? '' : ' · 범위는 자동'}</div>
+    <div class="gdcfg" id="gdCfg"${GRD.cfgOpen ? '' : ' hidden'}>
+      <div class="r3"><label>최소<input id="gdMin" inputmode="decimal" value="${g.min}"></label><label>최대<input id="gdMax" inputmode="decimal" value="${g.max}"></label><label>숫자 사이 칸<input id="gdSub" inputmode="numeric" value="${g.sub}"></label></div>
+      <p>다이얼에 적힌 숫자 그대로 적어요. 숫자 사이에 작은 눈금이 있으면 칸 수를 적어요 (1→2 사이에 점이 2개면 3칸). 그러면 기록의 '4.2'는 4에서 작은 칸 2개로 읽어요.</p>
+      <button type="button" class="btn primary" id="gdCfgOk">저장</button></div>
+    ${g.curve ? `<div class="gddial"><div id="gdDial">${gdDialSvg(g, GRD.val)}</div>
+      <div class="stp"><button type="button" data-gs="-1" aria-label="한 칸 내리기">−</button><span>D50 <b>${Math.round(um)}</b> µm</span><button type="button" data-gs="1" aria-label="한 칸 올리기">+</button></div>
+      <div class="gdband">대략 ${grindBand(um) || '-'} 굵기</div></div>`
+      : `<div class="hint" style="margin-top:10px">이 그라인더는 분쇄도 ${g.pts.length ? `'${gdFmt(g.pts[0][0], g.sub)}' 하나만` : '를 숫자로 적은 기록이 없이'} 재서 아직 다이얼을 만들 수 없어요. 다른 분쇄도로 한 번 더 재 주세요.</div>`}`;
+  const others = all.filter(x => x.k !== g.k), comm = g.curve ? gdCommOthers(all) : [];
+  const row = (h, tag) => {
+    if (!h.curve) return `<div class="gdrow dim"><div class="nm">${esc(gdLabel(h))}</div><div class="tg o">잰 분쇄도 ${h.pts.length}개</div><div class="why">분쇄도를 하나 더 재면 맞출 수 있어요 (서로 다른 분쇄도 2개 이상)</div></div>`;
+    const v = h.curve.setAt(um), out = v < h.min - 1e-9 || v > h.max + 1e-9, sv = Math.max(h.min, Math.min(h.max, v)), x = q => ((q - h.min) / (h.max - h.min || 1) * 100).toFixed(1) + '%';
+    const st = h.comm ? ['e', `≈ 다른 사람 기록 · ${h.comm}명`] : gdState(h, gdSnap(v, h.sub)), lo = Math.max(h.min, h.curve.lo), hi = Math.min(h.max, h.curve.hi);
+    return `<div class="gdrow" ${tag ? `data-gk="${esc(h.k)}"` : ''} role="button" tabindex="0">
+      <div class="nm">${esc(gdLabel(h))}</div><div class="v">${out ? '—' : '≈ ' + gdFmt(gdSnap(v, h.sub), h.sub)}</div>
+      <div class="bar"><span class="rg" style="left:${x(lo)};width:calc(${x(hi)} - ${x(lo)})"></span>${h.pts.map(p => `<span class="dt" style="left:${x(p[0])}"></span>`).join('')}<span class="nd" style="left:${x(sv)}"></span></div>
+      <div class="tg ${st[0]}">${out ? '다이얼 범위를 넘어요' : st[1]}</div><div class="tg tr">${gdFmt(h.min, 1)}~${gdFmt(h.max, 1)}</div></div>`;
+  };
+  list.innerHTML = !g.curve ? '' : (others.length ? '<div class="gdlh">같은 굵기 · 내 다른 그라인더</div>' + others.map(h => row(h, true)).join('') : '<div class="gdlh">다른 그라인더도 재면 여기에 같은 굵기가 나와요</div>') +
+    (comm.length ? '<div class="gdlh">커뮤니티 그라인더 (내가 안 잰 것 · 대략)</div>' + comm.map(h => row(h, false)).join('') : '');
+  // 연결
+  chips.querySelectorAll('[data-gk]').forEach(b => b.onclick = () => gdSetBase(b.dataset.gk, um));
+  list.querySelectorAll('.gdrow[data-gk]').forEach(b => { const go = () => gdSetBase(b.dataset.gk, um); b.onclick = go; b.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } }; });
+  $('#gdGear').onclick = () => { GRD.cfgOpen = !GRD.cfgOpen; $('#gdCfg').hidden = !GRD.cfgOpen; };
+  $('#gdCfgOk').onclick = () => {
+    const mn = +$('#gdMin').value, mx = +$('#gdMax').value, sb = Math.round(+$('#gdSub').value);
+    if (!(isFinite(mn) && isFinite(mx) && mx > mn) || !(sb >= 1 && sb <= 20)) { toast('최소·최대·칸 수를 확인해 주세요'); return; }
+    gdCfgSave(g.k, { min: mn, max: mx, sub: sb }); GRD.cfgOpen = false; GRD.val = null; gdRenderDial(); toast('다이얼 범위를 저장했어요');
+  };
+  if (!g.curve) return;
+  const step = d => { GRD.val = Math.max(g.min, Math.min(g.max, gdSnap(GRD.val + d / g.sub, g.sub))); gdRenderDial(); };
+  main.querySelectorAll('[data-gs]').forEach(b => {
+    let t1 = 0, t2 = 0; const d = +b.dataset.gs, stop = () => { clearTimeout(t1); clearInterval(t2); };
+    b.addEventListener('pointerdown', e => { e.preventDefault(); step(d); t1 = setTimeout(() => { t2 = setInterval(() => step(d), 70); }, 420); });
+    for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, stop);
+    b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); step(d); } });
+  });
+  const dial = $('#gdDial');
+  const fromPt = e => {
+    const r = dial.querySelector('svg').getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    let a = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI; if (a < 0) a += 360;
+    let rel = a - GD_A0; if (rel < 0) rel += 360; if (rel > GD_SW) rel = rel - GD_SW < (360 - GD_SW) / 2 ? GD_SW : 0;
+    const v = gdSnap(g.min + rel / GD_SW * (g.max - g.min), g.sub);
+    if (v !== GRD.val) { GRD.val = v; const keep = dial; gdRenderDial(); }
+  };
+  dial.onpointerdown = e => { GRD.drag = true; try { dial.setPointerCapture(e.pointerId); } catch (_) { } fromPt(e); };
+  dial.onpointermove = e => { if (GRD.drag) fromPt(e); };
+  dial.onpointerup = dial.onpointercancel = () => { GRD.drag = false; };
+}
+function gdSetBase(k, um) {
+  const all = gdMine().concat(gdCommOthers(gdMine())), h = all.find(x => x.k === k); if (!h || h.comm) return;
+  GRD.base = k; GRD.cfgOpen = false;
+  GRD.val = h.curve && um != null ? Math.max(h.min, Math.min(h.max, gdSnap(h.curve.setAt(um), h.sub))) : null;
+  gdRenderDial(); $('#gdChips').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+/* 다이얼을 끄는 동안 다시 그리면 포인터를 잃지 않게: 새로 그린 다이얼에도 끌기 상태 유지 */
+document.addEventListener('pointerup', () => { GRD.drag = false; });
+document.addEventListener('pointermove', e => { if (!GRD.drag) return; const d = $('#gdDial'); if (d && d.onpointermove) d.onpointermove(e); });
+
+/* ── 그라인더 커뮤니티 ── */
+const GC_API = 'https://pour-community.keendult.workers.dev';
+function gcShared() { try { return JSON.parse(localStorage.getItem('gs_gshared') || '{}') || {}; } catch (e) { return {}; } }
+function gcSetShared(o) { try { localStorage.setItem('gs_gshared', JSON.stringify(o)); } catch (e) { } gsDirty(); }
+/* 이름: 레시피북 커뮤니티와 같은 닉네임#태그 (localStorage pourGuide.v1 flags) */
+function gcIdent() { try { const f = (JSON.parse(localStorage.getItem('pourGuide.v1') || '{}').flags) || {}; return f.nick && /^\d{4}$/.test(f.tag || '') ? { nick: f.nick, tag: f.tag } : null; } catch (e) { return null; } }
+async function gcEnsureIdent() {
+  const me = gcIdent(); if (me) return me;
+  const v = await askModal({ title: '커뮤니티 이름', message: '그라인더 기록에 붙을 이름이에요. 레시피북 커뮤니티와 같은 이름(닉네임#태그)을 써요.', fields: [{ label: '닉네임 (16자까지)', value: '' }], ok: '정하기' });
+  const nick = v && String(v[0] || '').replace(/\s+/g, '').slice(0, 16); if (!nick) return null;
+  try {
+    const o = JSON.parse(localStorage.getItem('pourGuide.v1') || '{}') || {}; o.flags = o.flags || {};
+    o.flags.nick = nick; if (!/^\d{4}$/.test(o.flags.tag || '')) o.flags.tag = String(1000 + Math.floor(Math.random() * 9000));
+    localStorage.setItem('pourGuide.v1', JSON.stringify(o)); return { nick, tag: o.flags.tag };
+  } catch (e) { toast('이름을 저장하지 못했어요'); return null; }
+}
+async function gcLoad() {
+  try {
+    const r = await fetch(GC_API + '/grinders'); const o = await r.json();
+    if (!r.ok) throw new Error(o.message || r.status);
+    GRD.comm = o.entries || []; GRD.commAt = Date.now();
+  } catch (e) { if (!GRD.comm) GRD.comm = null; GRD.commErr = true; }
+  if (!$('#tab-grinders').classList.contains('hidden')) { gdRenderDial(); gcRender(); }
+}
+function gcGroups() {
+  const m = new Map();
+  for (const e of GRD.comm || []) {
+    const k = e.gkey; if (!m.has(k)) m.set(k, { k, names: {}, es: [], people: new Set() });
+    const o = m.get(k); o.names[e.grinder] = (o.names[e.grinder] || 0) + 1; o.es.push(e); o.people.add(e.nick + '#' + e.tag);
+  }
+  return [...m.values()].map(o => ({ ...o, name: Object.entries(o.names).sort((a, b) => b[1] - a[1])[0][0] })).sort((a, b) => b.people.size - a.people.size || b.es.length - a.es.length);
+}
+function gcRender() {
+  const me = gcIdent(), sh = gcShared(), nShared = Object.keys(sh).length;
+  $('#gcMe').innerHTML = (me ? `<span><b>${esc(me.nick)}</b>#${me.tag}</span>` : '<span>아직 올린 기록이 없어요</span>') + (nShared ? `<span>· 올린 기록 ${nShared}개</span>` : '') + '<button type="button" class="btn primary" id="gcUp">내 기록 올리기</button>';
+  $('#gcUp').onclick = gcPick;
+  const box = $('#gcList');
+  if (GRD.comm == null) { box.innerHTML = `<div class="hint">${GRD.commErr ? '커뮤니티를 불러오지 못했어요. 인터넷 연결을 확인하고 <a href="#" id="gcRe">다시 불러오기</a>' : '불러오는 중…'}</div>`; if ($('#gcRe')) $('#gcRe').onclick = e => { e.preventDefault(); GRD.commErr = false; gcRender(); gcLoad(); }; return; }
+  const mineK = new Set(gdMine().map(g => g.k.split('|')[0]));
+  const q = GRD.q.trim().toLowerCase().replace(/\s+/g, '');
+  const gs = gcGroups().filter(g => !q || g.k.includes(q) || Object.keys(g.names).some(n => n.toLowerCase().replace(/\s+/g, '').includes(q)));
+  box.innerHTML = !gs.length ? `<div class="hint">${GRD.comm.length ? '찾는 그라인더가 없어요.' : '아직 올라온 그라인더 기록이 없어요. 첫 기록을 올려 주세요!'}</div>`
+    : gs.map(g => `<div class="gcrow"><button type="button" data-gc="${esc(g.k)}" aria-expanded="${GRD.open === g.k}"><b>${esc(g.name)}</b>${mineK.has(g.k) ? '<em>내 그라인더</em>' : ''}<span>${g.people.size}명 · ${g.es.length}개 ${GRD.open === g.k ? '▴' : '▾'}</span></button>${GRD.open === g.k ? gcDetailHtml(g) : ''}</div>`).join('');
+  box.querySelectorAll('[data-gc]').forEach(b => b.onclick = () => { GRD.open = GRD.open === b.dataset.gc ? '' : b.dataset.gc; gcRender(); });
+  const open = gs.find(g => g.k === GRD.open);
+  if (open && $('#gcCv')) gcDraw($('#gcCv'), open);
+  box.querySelectorAll('[data-gdel]').forEach(b => b.onclick = e => { e.preventDefault(); gcDelete(b.dataset.gdel); });
+}
+function gcFit(es) {
+  const pts = es.map(e => [gdNum(e.setting, 1), e.d50]).filter(p => isFinite(p[0]));
+  if (new Set(pts.map(p => p[0])).size < 2) return null;
+  const sl = []; for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) if (pts[i][0] !== pts[j][0]) sl.push((pts[j][1] - pts[i][1]) / (pts[j][0] - pts[i][0]));
+  const b = gdMed(sl), a = gdMed(pts.map(p => p[1] - b * p[0]));
+  return isFinite(b) && Math.abs(b) > 1e-6 ? { a, b, at: x => a + b * x, inv: y => (y - a) / b } : null;
+}
+function gcDetailHtml(g) {
+  const me = gcIdent(), mine = me ? g.es.filter(e => e.nick === me.nick && e.tag === me.tag) : [], others = g.es.filter(e => !mine.includes(e));
+  const fit = gcFit(others.length >= 2 ? others : g.es), sh = gcShared(), myIds = new Set(Object.values(sh).map(x => x.id));
+  let cmp = '';
+  if (mine.length && others.length && fit) {
+    const ds = mine.map(e => { const x = gdNum(e.setting, 1); return isFinite(x) ? fit.inv(e.d50) - x : null; }).filter(v => v != null);
+    if (ds.length) {
+      const d = gdMed(ds), last = mine.slice().sort((a, b) => b.at - a.at)[0], lx = gdNum(last.setting, 1);
+      cmp = `<p>내 그라인더는 같은 굵기가 다른 사람들보다 <b>${Math.abs(d) < 0.3 ? '거의 같은 숫자' : `${Math.abs(d).toFixed(1)}칸 ${d > 0 ? '낮은' : '높은'} 숫자`}</b>에서 나와요.${isFinite(lx) ? ` 내 ${esc(last.setting)} ≈ 다른 사람들의 ${(lx + d).toFixed(1)}` : ''} (같은 모델도 영점·버 상태에 따라 달라요)</p>`;
+    }
+  }
+  const rows = g.es.slice().sort((a, b) => (gdNum(a.setting, 1) || 0) - (gdNum(b.setting, 1) || 0)).slice(0, 60).map(e => {
+    const mineE = mine.includes(e);
+    return `<tr><td>${mineE ? '★ ' : ''}${esc(e.nick)}#${esc(e.tag)}${e.burr ? ` · ${esc(e.burr)}` : ''}</td><td>${esc(e.setting)}</td><td>${Math.round(e.d50)}µm</td><td>${mineE && myIds.has(e.id) ? `<a href="#" data-gdel="${esc(e.id)}">내리기</a>` : (e.method === 'coaster' ? '코스터' : '시트') + (e.merged ? ` ${e.merged}장` : '')}</td></tr>`;
+  }).join('');
+  return `<div class="gcdet"><canvas id="gcCv"></canvas>
+    <p>${fit ? `분쇄도 1칸에 D50 약 <b>${fit.b >= 0 ? '+' : '−'}${Math.round(Math.abs(fit.b))}µm</b> · ` : ''}${g.people.size}명이 올린 ${g.es.length}개 기록${Object.keys(g.names).length > 1 ? ` · 이름: ${Object.keys(g.names).map(esc).join(', ')}` : ''}</p>${cmp}
+    <table>${rows}</table></div>`;
+}
+function gcDraw(cv, g) {
+  const me = gcIdent(), dpr = window.devicePixelRatio || 1, W = cv.clientWidth || 320, H = 220;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const th = { bg: cssVar('--chartbg'), ink: cssVar('--ink'), mute: cssVar('--mute'), grid: cssVar('--grid'), acc: cssVar('--accent'), good: cssVar('--good') };
+  c.fillStyle = th.bg; c.fillRect(0, 0, W, H);
+  const pts = g.es.map(e => ({ x: gdNum(e.setting, 1), y: e.d50, mine: me && e.nick === me.nick && e.tag === me.tag })).filter(p => isFinite(p.x));
+  if (!pts.length) { c.fillStyle = th.mute; c.font = '12px sans-serif'; c.fillText('분쇄도를 숫자로 적은 기록이 없어요', 12, 24); return; }
+  const L = 46, R = 12, T = 12, B = 30;
+  let x0 = Math.min(...pts.map(p => p.x)), x1 = Math.max(...pts.map(p => p.x)), y0 = Math.min(...pts.map(p => p.y)), y1 = Math.max(...pts.map(p => p.y));
+  if (x1 - x0 < 1) { x0 -= 1; x1 += 1; } const px = (x1 - x0) * 0.08; x0 -= px; x1 += px;
+  if (y1 - y0 < 100) { y0 -= 50; y1 += 50; } const py = (y1 - y0) * 0.1; y0 -= py; y1 += py;
+  const X = x => L + (x - x0) / (x1 - x0) * (W - L - R), Y = y => H - B - (y - y0) / (y1 - y0) * (H - T - B);
+  c.strokeStyle = th.grid; c.lineWidth = 1; c.fillStyle = th.mute; c.font = '10.5px sans-serif';
+  const nice = (a, b, n) => { const st = Math.pow(10, Math.floor(Math.log10((b - a) / n))), m = [1, 2, 5, 10].find(k => (b - a) / (st * k) <= n) * st; const o = []; for (let v = Math.ceil(a / m) * m; v <= b; v += m) o.push(+v.toFixed(6)); return o; };
+  c.textAlign = 'right'; for (const v of nice(y0, y1, 5)) { c.beginPath(); c.moveTo(L, Y(v)); c.lineTo(W - R, Y(v)); c.stroke(); c.fillText(Math.round(v), L - 5, Y(v) + 3.5); }
+  c.textAlign = 'center'; for (const v of nice(x0, x1, 6)) c.fillText(v, X(v), H - B + 15);
+  c.fillText('분쇄도', (L + W - R) / 2, H - 4); c.save(); c.translate(11, (T + H - B) / 2); c.rotate(-Math.PI / 2); c.fillText('D50 µm', 0, 0); c.restore();
+  const fit = gcFit(g.es);
+  if (fit) { c.strokeStyle = th.acc; c.globalAlpha = .7; c.setLineDash([5, 4]); c.beginPath(); c.moveTo(X(x0), Y(fit.at(x0))); c.lineTo(X(x1), Y(fit.at(x1))); c.stroke(); c.setLineDash([]); c.globalAlpha = 1; }
+  for (const p of pts.filter(p => !p.mine)) { c.fillStyle = th.mute; c.globalAlpha = .75; c.beginPath(); c.arc(X(p.x), Y(p.y), 4, 0, 7); c.fill(); }
+  c.globalAlpha = 1;
+  for (const p of pts.filter(p => p.mine)) { c.fillStyle = th.good; c.strokeStyle = th.bg; c.lineWidth = 2; c.beginPath(); c.arc(X(p.x), Y(p.y), 5.5, 0, 7); c.fill(); c.stroke(); }
+}
+/* 내 기록 올리기: 기록 고르기 창 */
+async function gcPick() {
+  const hid = hiddenOrig(), sh = gcShared();
+  const recs = S.records.filter(r => !hid.has(r.id) && r.grinder && r.setting && gdD50(r)).slice(0, 80);
+  if (!recs.length) { toast('그라인더·분쇄도를 적어 저장한 기록이 있어야 올릴 수 있어요'); return; }
+  const m = $('#modal'), box = $('#modalBox');
+  box.innerHTML = `<h2>내 기록 올리기</h2><p class="hint" style="margin:0">올라가는 것: 그라인더 · 버 · 분쇄도 · 크기 숫자(D10·D50·D90·미분) · 잰 방법. 사진과 원두·메모는 안 올라가요. 같은 그라인더·분쇄도를 다시 올리면 새 기록으로 바뀌어요.</p>
+    <div class="gcpick">${recs.map(r => `<label><input type="checkbox" value="${esc(r.id)}" ${sh[r.id] ? 'disabled' : ''}><span>${esc(metaLabel(r))}${r.burr ? ` · ${esc(r.burr)}` : ''}</span><small>${Math.round(gdD50(r).d50)}µm · ${fmtDate(r.ts).slice(5, 10)}${r.merged ? ` · ${r.merged}장` : ''}</small>${sh[r.id] ? '<em>올림</em>' : ''}</label>`).join('')}</div>
+    <div class="btns"><button class="btn primary" id="mOk">올리기</button><button class="btn" id="mCancel">닫기</button></div>`;
+  m.classList.remove('hidden');
+  const close = () => m.classList.add('hidden');
+  $('#mCancel').onclick = close; m.onclick = e => { if (e.target === m) close(); };
+  $('#mOk').onclick = async () => {
+    const ids = [...box.querySelectorAll('input:checked')].map(i => i.value);
+    if (!ids.length) { toast('올릴 기록을 골라 주세요'); return; }
+    close();
+    const me = await gcEnsureIdent(); if (!me) return;
+    let ok = 0, err = '';
+    for (const id of ids) {
+      const r = S.records.find(x => x.id === id), st = gdD50(r); if (!r || !st) continue;
+      try {
+        const res = await fetch(GC_API + '/grind-share', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nick: me.nick, tag: me.tag,
+          rec: { grinder: r.grinder, burr: r.burr || '', setting: r.setting, d10: +st.d10.toFixed(1), d50: +st.d50.toFixed(1), d90: +st.d90.toFixed(1), fines: +st.fines.toFixed(1), n: r.d.length, method: r.method || 'coaster', merged: r.merged || 0, src: 'grindscope' } }) });
+        const o = await res.json(); if (!res.ok) throw new Error(o.message || res.status);
+        const all = gcShared(); all[id] = { id: o.id, key: o.key, at: Date.now() }; gcSetShared(all); ok++;
+      } catch (e) { err = String(e.message || e); break; }
+    }
+    toast(ok ? `${ok}개를 올렸어요` + (err ? ` · 나머지는 실패: ${err}` : '') : `올리지 못했어요: ${err || '알 수 없는 오류'}`);
+    GRD.commAt = 0; gcLoad();
+  };
+}
+async function gcDelete(entryId) {
+  const sh = gcShared(), recId = Object.keys(sh).find(k => sh[k].id === entryId); if (!recId) return;
+  const ok = await askModal({ title: '기록 내리기', message: '커뮤니티에서 이 기록을 내릴까요? 내 기록(이 기기)은 그대로 남아요.', ok: '내리기', danger: true });
+  if (!ok) return;
+  try {
+    const res = await fetch(GC_API + '/grind-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: entryId, key: sh[recId].key }) });
+    const o = await res.json(); if (!res.ok && o.error !== 'gone') throw new Error(o.message || res.status);
+    delete sh[recId]; gcSetShared(sh); toast('내렸어요'); GRD.commAt = 0; gcLoad();
+  } catch (e) { toast('내리지 못했어요: ' + (e.message || e)); }
+}
+$('#gcQ').addEventListener('input', () => { GRD.q = $('#gcQ').value; gcRender(); });
+window.__gs = { S, GRD, gdStatCache, renderGrinders };   // 테스트용
+
 /* 폰 뒤로가기 (2.45): 크게 보기·창 닫기 → 분석 탭으로 → 레시피북으로 */
 if (!(history.state && history.state.pg)) { try { history.pushState({ pg: 1 }, ''); } catch (e) { } }
 window.addEventListener('popstate', () => {
@@ -3326,7 +3743,7 @@ window.addEventListener('popstate', () => {
   if (done) { try { history.pushState({ pg: 1 }, ''); } catch (e) { } } else history.back();
 });
 $('#tbCam').onclick = () => { switchTab('analyze'); $('#fileCamera').click(); };
-$('#tbSheet').onclick = () => { lsSet('gs_sheet_printed', '1'); renderGuide(); printSheet(); };
+
 
 window.addEventListener('resize', debounce(() => {
   resizeView(); if (S.full) { fitView(); draw(); }
