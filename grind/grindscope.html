@@ -136,6 +136,13 @@ table.cmp small.burr{color:var(--mute)}
 .mtag.sheet{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
 .mtag.coaster{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
 .calline{margin:-2px 0 10px;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--good) 10%,transparent);font-size:12.5px;line-height:1.55;color:var(--ink)}
+.caldone{margin:2px 0 12px;padding:18px 16px;border-radius:14px;border:1.5px solid color-mix(in srgb,var(--good) 55%,transparent);background:color-mix(in srgb,var(--good) 8%,var(--panel));text-align:center}
+.caldone.empty{border-color:color-mix(in srgb,var(--warn) 55%,transparent);background:color-mix(in srgb,var(--warn) 8%,var(--panel))}
+.caldone .ck{font-size:13px;font-weight:800;color:var(--good)}.caldone.empty .ck{color:var(--warn)}
+.caldone b{display:block;font-size:40px;line-height:1.15;margin:4px 0 2px;color:var(--ink);font-variant-numeric:tabular-nums}
+.caldone p{margin:6px 0 0;font-size:13px;line-height:1.6;color:var(--ink)}
+.caldone small{display:block;margin-top:4px;font-size:11.5px;color:var(--mute)}
+.caldone .btn{margin-top:14px;width:100%}
 .calline.todo{background:color-mix(in srgb,var(--warn) 14%,transparent)}
 .calline button{margin-left:4px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:2px 9px;font:inherit;font-size:11.5px}
 .rec .kids{margin-top:4px;border:1px solid var(--line);background:var(--bg);color:var(--accent);border-radius:999px;padding:3px 10px;font:inherit;font-size:12px;font-weight:600}
@@ -309,6 +316,7 @@ html[data-pt="s1"] .btn.primary{background:linear-gradient(90deg,var(--pt-btn),v
     <h2>사진</h2>
     <div class="srcmode"><div class="seg" id="srcMode" role="group" aria-label="측정 방법"><button type="button" data-src="sheet">인쇄 시트</button><button type="button" data-src="coaster">DiFluid 코스터</button></div><button type="button" class="btn" id="btnSheet" hidden>🖨 시트 PDF 받기</button></div>
     <div class="calline" id="calLine" hidden></div>
+    <div class="caldone" id="calDone" hidden></div>
     <div class="btns">
       <label class="btn primary filebtn">📷 촬영<input id="fileCamera" type="file" accept="image/*" capture="environment"></label>
       <label class="btn filebtn">🖼 사진 선택<input id="filePick" type="file" accept="image/*"></label>
@@ -1406,7 +1414,7 @@ async function loadFile(file) {
   if (!file) return;
   presetSliders();
   spin(true, '사진 불러오는 중…');
-  setStatus('⏳ 사진 해석 중…');
+  setStatus('⏳ 사진 해석 중…'); $('#calDone').hidden = true;
   $('#panelWork').classList.remove('hidden');
   await tick(40);
   try {
@@ -3061,9 +3069,7 @@ async function loadSheet(full, W, H, file, down) {
   const cal = sheetCal(), pctTxt = v => `${(v * 100).toFixed(1)}%`;
   if (sc.s && sc.s > 0.85 && sc.s < 1.15 && !sc.coinOnly) {           // 카드로 잼 → 이 시트 인쇄 크기로 등록(갱신)
     scale = sc.s; scaleSrc = '카드';
-    const changed = !cal || Math.abs(cal.scale / sc.s - 1) > 0.005;
     setSheetCal({ scale: sc.s, ts: Date.now() });
-    if (changed) toast(`이 시트의 인쇄 크기(${pctTxt(sc.s)})를 등록했어요 · 다음부턴 카드 없이 네모만 가까이 찍어요`);
   } else if (cal) {                                                      // 등록해 둔 인쇄 크기
     scale = cal.scale; scaleSrc = '등록값';
   } else if (sc.s && sc.s > 0.85 && sc.s < 1.15) {                      // 등록 전 · 동전만
@@ -3090,6 +3096,7 @@ async function loadSheet(full, W, H, file, down) {
   prefillMeta(); showGeoWarn(warn);
   await computeAnalysis();
   spin(false);
+  if (sheetEmpty()) { showCalDone(scaleSrc === '카드' ? scale : null); return; }   // 가루 없이 찍은 사진(처음 카드 등록 등) → 결과 대신 등록 안내
   setStatus(`✓ 분석 완료: ${S.lastStats && S.lastStats.n || 0}개 입자 (인쇄 시트 · ${scaleSrc === '카드' ? `카드로 인쇄 크기 ${pctTxt(scale)} 등록` : scaleSrc === '등록값' ? `등록한 인쇄 크기 ${pctTxt(scale)}` : scaleSrc ? scaleSrc + ' 기준' : '인쇄 크기 미등록'})`, scaleSrc ? 'ok' : undefined);
   $('#panelWork').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -3170,6 +3177,33 @@ function sheetScale(fctx, W, H, Hm) {
 /* 인쇄 크기 등록 (시트마다 처음 한 번 카드로) */
 function sheetCal() { try { const o = JSON.parse(localStorage.getItem('gs_sheet_cal') || 'null'); return o && o.scale > 0.85 && o.scale < 1.15 ? o : null; } catch (e) { return null; } }
 function setSheetCal(o) { try { if (o) localStorage.setItem('gs_sheet_cal', JSON.stringify(o)); else localStorage.removeItem('gs_sheet_cal'); } catch (e) { } }
+/* 가루가 거의 없는 시트 사진인지: 입자 수가 적거나, 입자 면적이 분석 칸의 0.6%도 안 됨 (실제 가루 사진은 성기게 펴도 3% 넘음) */
+function sheetEmpty() {
+  const d = S.lastD || [], k = S.sheet && S.sheet.k, r = S.geo && S.geo.analysis && S.geo.analysis.r;
+  if (d.length < 150) return true;
+  if (!k || !r) return false;
+  const rMm = r / k * (S.sheet.scale || 1), area = Math.PI * rMm * rMm;
+  let a = 0; for (const um of d) a += Math.PI / 4 * (um / 1000) ** 2;
+  return a / area < 0.006;
+}
+function showCalDone(scale) {
+  for (const id of ['#panelWork', '#panelResult', '#panelSave']) $(id).classList.add('hidden');
+  S.lastD = null; S.lastStats = null; updSaveBar(); showGeoWarn([]);
+  const box = $('#calDone'), pct = v => (v * 100).toFixed(1) + '%';
+  box.classList.toggle('empty', !scale);
+  box.innerHTML = scale
+    ? `<div class="ck">✓ 인쇄 크기 등록 완료</div><b>${pct(scale)}</b><small>100mm → ${(scale * 100).toFixed(1)}mm로 인쇄됨 · 카드로 잼</small>
+       <p>이제 네모 칸 안에 가루를 얇게 펴고<br><b style="display:inline;font-size:inherit">네모만 가까이</b> 찍어 주세요. 카드는 없어도 돼요.</p>
+       <button type="button" class="btn primary" id="calShot">📷 가루 찍기</button>`
+    : `<div class="ck">가루가 보이지 않아요</div>
+       <p>네모 칸 안에 가루를 얇게 펴고 다시 찍어 주세요.${sheetCal() ? '' : '<br>처음이면 카드를 카드 자리에 올리고 시트 전체를 찍어 인쇄 크기부터 등록해요.'}</p>
+       <button type="button" class="btn primary" id="calShot">📷 다시 찍기</button>`;
+  box.hidden = false;
+  $('#calShot').onclick = () => $('#fileCamera').click();
+  setStatus(scale ? `✓ 인쇄 크기 ${pct(scale)} 등록 · 가루를 찍어 주세요` : '⚠ 가루가 보이지 않아 결과를 내지 않았어요', scale ? 'ok' : 'err');
+  renderGuide && renderGuide();
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
 function renderCalLine() {
   const el = $('#calLine'); if (!el) return;
   const c = sheetCal();
